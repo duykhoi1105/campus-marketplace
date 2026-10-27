@@ -5,6 +5,7 @@ import {
   TextInput,
   TouchableOpacity,
   ActivityIndicator,
+  ScrollView,
   StyleSheet,
 } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -20,17 +21,26 @@ export default function LoginScreen() {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
-  const handleLogin = async (customEmail?: string) => {
-    const target = customEmail || email;
-    if (!target.trim()) {
-      setErrorMsg('Vui lòng nhập email hoặc mã số sinh viên.');
+  const handleLogin = async (customEmail?: string, customPassword?: string) => {
+    const targetEmail = (customEmail !== undefined ? customEmail : email).trim();
+    const targetPass = (customPassword !== undefined ? customPassword : password).trim();
+
+    if (!targetEmail) {
+      setErrorMsg('Vui lòng nhập Email sinh viên hoặc Mã số sinh viên (MSSV).');
+      return;
+    }
+
+    if (targetPass && targetPass.length < 4) {
+      setErrorMsg('Mật khẩu bảo mật phải có tối thiểu 4 ký tự.');
       return;
     }
 
     setErrorMsg('');
-    const success = await login(target.trim());
+    const success = await login(targetEmail, targetPass || '123456');
+
     if (success) {
       if (router.canGoBack()) {
         router.back();
@@ -38,20 +48,33 @@ export default function LoginScreen() {
         router.replace('/(tabs)');
       }
     } else {
-      setErrorMsg('Không thể đăng nhập. Vui lòng thử lại.');
+      setErrorMsg('Không thể đăng nhập. Vui lòng kiểm tra lại thông tin hoặc mạng.');
+    }
+  };
+
+  const handleGuestContinue = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(tabs)');
     }
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <ScrollView
+      style={[styles.container, { backgroundColor: colors.background }]}
+      contentContainerStyle={styles.scrollContent}
+      keyboardShouldPersistTaps="handled"
+    >
       <View
         style={[
           styles.loginBox,
           { backgroundColor: colors.backgroundCard, borderColor: colors.borderDefault },
         ]}
       >
+        {/* Header trường và logo */}
         <View style={styles.header}>
-          <Text style={{ fontSize: 48, textAlign: 'center' }}>🎓</Text>
+          <Text style={{ fontSize: 50, textAlign: 'center' }}>🎓</Text>
           <Text
             style={[
               styles.title,
@@ -67,10 +90,11 @@ export default function LoginScreen() {
               { color: colors.textSecondary, textAlign: 'center', marginTop: Spacing.xxs },
             ]}
           >
-            Trường Đại học Công nghệ Đồng Nai
+            Trường Đại học Công nghệ Đồng Nai — Khoa CNTT
           </Text>
         </View>
 
+        {/* Thông báo lỗi nếu có */}
         {errorMsg ? (
           <View
             style={[
@@ -84,9 +108,9 @@ export default function LoginScreen() {
           </View>
         ) : null}
 
-        {/* Input email / MSSV */}
+        {/* Input Email / MSSV */}
         <Text style={[styles.inputLabel, Typography.bodySmall, { color: colors.textSecondary }]}>
-          Email hoặc Mã số sinh viên (MSSV)
+          Email hoặc Mã số sinh viên (MSSV) <Text style={{ color: colors.danger }}>*</Text>
         </Text>
         <TextInput
           style={[
@@ -99,15 +123,18 @@ export default function LoginScreen() {
             },
           ]}
           value={email}
-          onChangeText={setEmail}
-          placeholder="1923050528@dntu.edu.vn"
+          onChangeText={text => {
+            setEmail(text);
+            if (errorMsg) setErrorMsg('');
+          }}
+          placeholder="1923050528 hoặc 1923050528@dntu.edu.vn"
           placeholderTextColor={colors.textMuted}
           keyboardType="email-address"
           autoCapitalize="none"
-          accessibilityLabel="Nhập email hoặc mã sinh viên"
+          accessibilityLabel="Nhập email sinh viên hoặc mã số sinh viên"
         />
 
-        {/* Input mật khẩu */}
+        {/* Input Mật khẩu có nút ẩn/hiện */}
         <Text
           style={[
             styles.inputLabel,
@@ -115,43 +142,57 @@ export default function LoginScreen() {
             { color: colors.textSecondary, marginTop: Spacing.md },
           ]}
         >
-          Mật khẩu
+          Mật khẩu tài khoản
         </Text>
-        <TextInput
-          style={[
-            styles.input,
-            Typography.body,
-            {
-              backgroundColor: colors.backgroundInput,
-              borderColor: colors.borderDefault,
-              color: colors.textPrimary,
-            },
-          ]}
-          value={password}
-          onChangeText={setPassword}
-          placeholder="••••••"
-          placeholderTextColor={colors.textMuted}
-          secureTextEntry
-          accessibilityLabel="Nhập mật khẩu"
-        />
+        <View style={styles.passwordWrapper}>
+          <TextInput
+            style={[
+              styles.passwordInput,
+              Typography.body,
+              {
+                backgroundColor: colors.backgroundInput,
+                borderColor: colors.borderDefault,
+                color: colors.textPrimary,
+              },
+            ]}
+            value={password}
+            onChangeText={text => {
+              setPassword(text);
+              if (errorMsg) setErrorMsg('');
+            }}
+            placeholder="Nhập mật khẩu (mặc định demo: 123456)"
+            placeholderTextColor={colors.textMuted}
+            secureTextEntry={!showPassword}
+            accessibilityLabel="Nhập mật khẩu đăng nhập"
+          />
+          <TouchableOpacity
+            style={[styles.eyeBtn, { backgroundColor: colors.backgroundSecondary }]}
+            onPress={() => setShowPassword(prev => !prev)}
+            accessibilityRole="button"
+            accessibilityLabel={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+          >
+            <Text style={{ fontSize: 18 }}>{showPassword ? '🙈' : '👁️'}</Text>
+          </TouchableOpacity>
+        </View>
 
-        {/* Nút đăng nhập */}
+        {/* Nút Đăng nhập chính */}
         <TouchableOpacity
           style={[styles.loginBtn, { backgroundColor: colors.tint, marginTop: Spacing.lg }]}
           onPress={() => handleLogin()}
           disabled={isLoading}
           accessibilityRole="button"
-          accessibilityLabel="Đăng nhập tài khoản"
+          accessibilityLabel="Đăng nhập tài khoản vào Chợ Sinh Viên"
         >
           {isLoading ? (
             <ActivityIndicator color={colors.onTint} />
           ) : (
             <Text style={[Typography.title, { color: colors.onTint, fontWeight: '700' }]}>
-              Đăng nhập
+              🔐 Đăng nhập ngay
             </Text>
           )}
         </TouchableOpacity>
 
+        {/* Đường phân cách */}
         <View
           style={[
             styles.divider,
@@ -159,27 +200,27 @@ export default function LoginScreen() {
           ]}
         />
 
-        {/* Tài khoản Demo một chạm phục vụ chấm thi */}
+        {/* Đăng nhập nhanh một chạm phục vụ chấm thi */}
         <Text
           style={[
             Typography.caption,
             { color: colors.textMuted, textAlign: 'center', marginBottom: Spacing.sm },
           ]}
         >
-          ⚡ Đăng nhập Demo nhanh cho buổi bảo vệ đồ án:
+          ⚡ Đăng nhập Demo một chạm (Phục vụ Hội đồng chấm đồ án):
         </Text>
 
         <View style={styles.demoButtonsRow}>
           <TouchableOpacity
             style={[
               styles.demoBtn,
-              { backgroundColor: colors.backgroundSecondary, borderColor: colors.borderDefault },
+              { backgroundColor: colors.infoBg, borderColor: colors.info },
             ]}
-            onPress={() => handleLogin('1923050528@dntu.edu.vn')}
+            onPress={() => handleLogin('1923050528@dntu.edu.vn', '123456')}
             accessibilityRole="button"
-            accessibilityLabel="Đăng nhập tài khoản Người mua"
+            accessibilityLabel="Đăng nhập nhanh tài khoản Người mua Nguyễn Duy Khôi"
           >
-            <Text style={[Typography.caption, { color: colors.tint, fontWeight: '700' }]}>
+            <Text style={[Typography.caption, { color: colors.info, fontWeight: '700' }]}>
               👤 Người Mua (Duy Khôi)
             </Text>
           </TouchableOpacity>
@@ -187,27 +228,45 @@ export default function LoginScreen() {
           <TouchableOpacity
             style={[
               styles.demoBtn,
-              { backgroundColor: colors.backgroundSecondary, borderColor: colors.borderDefault },
+              { backgroundColor: colors.warningBg, borderColor: colors.warning },
             ]}
-            onPress={() => handleLogin('duykhoi.seller@dntu.edu.vn')}
+            onPress={() => handleLogin('duykhoi.seller@dntu.edu.vn', '123456')}
             accessibilityRole="button"
-            accessibilityLabel="Đăng nhập tài khoản Người bán"
+            accessibilityLabel="Đăng nhập nhanh tài khoản Người bán Store DNTU"
           >
             <Text style={[Typography.caption, { color: colors.warning, fontWeight: '700' }]}>
               🏷️ Người Bán (Store DNTU)
             </Text>
           </TouchableOpacity>
         </View>
+
+        {/* Tiếp tục với tư cách Khách */}
+        <TouchableOpacity
+          style={[
+            styles.guestBtn,
+            { backgroundColor: colors.backgroundSecondary, borderColor: colors.borderDefault },
+          ]}
+          onPress={handleGuestContinue}
+          accessibilityRole="button"
+          accessibilityLabel="Tiếp tục duyệt chợ với tư cách Khách"
+        >
+          <Text style={[Typography.bodySmall, { color: colors.textSecondary, fontWeight: '600' }]}>
+            Duyệt chợ với tư cách Khách ➔
+          </Text>
+        </TouchableOpacity>
       </View>
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
+  },
+  scrollContent: {
     padding: Spacing.lg,
+    paddingVertical: Spacing.xxl,
+    justifyContent: 'center',
   },
   loginBox: {
     borderRadius: BorderRadius.xl,
@@ -237,6 +296,25 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.md,
     paddingHorizontal: Spacing.md,
   },
+  passwordWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  passwordInput: {
+    flex: 1,
+    minHeight: TouchTarget.minHeight,
+    borderWidth: 1,
+    borderRadius: BorderRadius.md,
+    paddingHorizontal: Spacing.md,
+  },
+  eyeBtn: {
+    width: 44,
+    height: TouchTarget.minHeight,
+    borderRadius: BorderRadius.md,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: Spacing.xs,
+  },
   loginBtn: {
     minHeight: TouchTarget.minHeight + 6,
     borderRadius: BorderRadius.lg,
@@ -258,5 +336,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: Spacing.xs,
+  },
+  guestBtn: {
+    minHeight: TouchTarget.minHeight,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: Spacing.md,
   },
 });

@@ -265,18 +265,25 @@ export const ApiService = {
   },
 
   /**
-   * Đăng nhập
+   * Đăng nhập tài khoản sinh viên / người bán
    */
-  async login(emailOrId: string): Promise<{ user: User; token: string }> {
+  async login(emailOrId: string, password?: string): Promise<{ user: User; token: string }> {
     try {
       const response = await fetchWithTimeout(`${API_BASE_URL}/auth/login`, {
         method: 'POST',
-        body: JSON.stringify({ email: emailOrId }),
+        body: JSON.stringify({ email: emailOrId, password }),
       });
       if (response.ok) {
         return await response.json();
       }
-    } catch (error) {
+      const errData = await response.json().catch(() => null);
+      if (errData?.message) {
+        throw new Error(errData.message);
+      }
+    } catch (error: any) {
+      if (error?.message && !error.message.includes('Network') && !error.message.includes('fetch')) {
+        throw error;
+      }
       console.warn('[ApiService] Đăng nhập ngoại tuyến với tài khoản mẫu:', error);
     }
 
@@ -308,6 +315,22 @@ export const ApiService = {
       user: demoUser,
       token: `offline-token-${demoUser.id}-${Date.now()}`,
     };
+  },
+
+  /**
+   * Đăng xuất phiên làm việc trên server
+   */
+  async logout(token?: string): Promise<boolean> {
+    try {
+      const response = await fetchWithTimeout(`${API_BASE_URL}/auth/logout`, {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      return response.ok;
+    } catch (error) {
+      console.warn('[ApiService] Đăng xuất ngoại tuyến cục bộ:', error);
+      return true;
+    }
   },
 };
 

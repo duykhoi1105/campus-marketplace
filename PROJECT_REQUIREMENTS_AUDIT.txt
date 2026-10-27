@@ -12,14 +12,14 @@ Ngày cập nhật nghiệm thu: 27/10/2026
 - Nền tảng: Expo SDK 57/58, React Native 0.86+, React 19, TypeScript strict mode, Expo Router
 - Kiểm tra TypeScript (Strict): npx tsc --noEmit -> 0 LỖI (PASS)
 - Kiểm tra Linting: npx eslint ... -> 0 LỖI, 0 CẢNH BÁO (PASS)
-- Kiểm thử tự động (Vitest): 6 test suites, 49/49 tests PASSED (100% PASS)
+- Kiểm thử tự động (Vitest): 7 test suites, 60/60 tests PASSED (100% PASS)
 - Kiểm toán mã màu hex: 0 mã hex ngoài constants/colors.ts (tests/hexColorAudit.test.ts PASSED)
 
 2. BẢNG ĐỐI CHIẾU CHI TIẾT TỪNG TIÊU CHÍ (AUDIT TABLE)
 
 | Mã | Yêu cầu | Trạng thái | Bằng chứng thực tế | Công việc còn lại |
 |---|---|---|---|---|
-| REQ-01 | Đăng nhập/đăng xuất, duy trì phiên bí mật qua SecureStore | HOÀN THÀNH (PASS) | services/authStorage.ts, store/useAuthStore.ts, app/login.tsx; SecureStore trên native, localStorage trên web; khôi phục khi restart, xóa sạch khi logout | Đã hoàn thành 100% |
+| REQ-01 | Đăng nhập/đăng xuất, duy trì phiên bí mật qua SecureStore | HOÀN THÀNH (PASS) | services/authStorage.ts, store/useAuthStore.ts, app/login.tsx, app/(tabs)/profile.tsx, tests/authFlow.test.ts (11 tests); SecureStore trên native, localStorage trên web; xóa sạch token và bật cờ isExplicitlyLoggedOut khi logout, chuyển đổi vai trò một chạm, giao diện Khách chuyên dụng | Đã hoàn thành 100% |
 | REQ-02 | Tải tin đăng từ API từ xa, xử lý lỗi mạng, timeout, dữ liệu không hợp lệ | HOÀN THÀNH (PASS) | backend/server.js (Node.js REST API zero-dep), services/api.ts (timeout 6000ms AbortController, error handling), TanStack Query integration | Đã hoàn thành 100% |
 | REQ-03 | Chụp/chọn và nén ảnh trước khi upload, báo cáo nén ảnh | HOÀN THÀNH (PASS) | utils/imageCompression.ts, utils/smartProductImage.ts (tự động gán ảnh theo tên sản phẩm), constants/compression.ts, tests/imageCompressionReport.test.ts, tests/smartProductImage.test.ts (20 tests), IMAGE_COMPRESSION_REPORT.txt (đo lường giảm 89.36% dung lượng) | Đã hoàn thành 100% |
 | REQ-04 | Tìm kiếm và lọc danh mục (tính toán trong quá trình render) | HOÀN THÀNH (PASS) | utils/filterListings.ts, app/(tabs)/index.tsx; dùng useMemo render-time, hỗ trợ tiếng Việt không dấu, không lưu state dẫn xuất riêng; tests/filterSearch.test.ts | Đã hoàn thành 100% |

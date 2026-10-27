@@ -11,7 +11,8 @@ interface AuthState {
 
   // Actions
   restoreSession: () => Promise<void>;
-  login: (emailOrId: string) => Promise<boolean>;
+  login: (emailOrId: string, password?: string) => Promise<boolean>;
+  loginAsDemo: (role: 'BUYER' | 'SELLER') => Promise<boolean>;
   logout: () => Promise<void>;
   switchRole: (newRole: UserRole) => Promise<void>;
   updateUser: (updated: Partial<User>) => Promise<void>;
@@ -26,45 +27,55 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   restoreSession: async () => {
     set({ isLoading: true });
     try {
-      const [token, user] = await Promise.all([
+      const [token, user, isLoggedOut] = await Promise.all([
         AuthStorage.getToken(),
         AuthStorage.getUser(),
+        AuthStorage.isExplicitlyLoggedOut(),
       ]);
 
       if (token && user) {
         set({ token, user, isInitialized: true, isLoading: false });
-      } else {
-        // Tự động đăng nhập tài khoản sinh viên mặc định cho buổi chấm đồ án nếu chưa có session
-        const defaultUser: User = {
-          id: 'USR-01',
-          name: 'Nguyễn Duy Khôi',
-          email: '1923050528@dntu.edu.vn',
-          role: 'BUYER',
-          phone: '0901234567',
-          campusLocation: 'Ký túc xá Khu B, DNTU',
-          avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
-          createdAt: '2026-10-14T08:00:00.000Z',
-        };
-        const defaultToken = `init-token-${defaultUser.id}`;
-        await Promise.all([
-          AuthStorage.saveToken(defaultToken),
-          AuthStorage.saveUser(defaultUser),
-        ]);
-        set({ user: defaultUser, token: defaultToken, isInitialized: true, isLoading: false });
+        return;
       }
+
+      // Nếu người dùng đã chủ động đăng xuất, tôn trọng trạng thái đăng xuất (giữ null)
+      if (isLoggedOut) {
+        set({ user: null, token: null, isInitialized: true, isLoading: false });
+        return;
+      }
+
+      // Khởi tạo tài khoản sinh viên DNTU mặc định cho lần đầu khởi chạy sạch trên máy giám khảo
+      const defaultUser: User = {
+        id: 'USR-01',
+        name: 'Nguyễn Duy Khôi',
+        email: '1923050528@dntu.edu.vn',
+        role: 'BUYER',
+        phone: '0901234567',
+        campusLocation: 'Ký túc xá Khu B, DNTU',
+        avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
+        createdAt: '2026-10-14T08:00:00.000Z',
+      };
+      const defaultToken = `init-token-${defaultUser.id}`;
+      await Promise.all([
+        AuthStorage.saveToken(defaultToken),
+        AuthStorage.saveUser(defaultUser),
+        AuthStorage.setExplicitlyLoggedOut(false),
+      ]);
+      set({ user: defaultUser, token: defaultToken, isInitialized: true, isLoading: false });
     } catch (e) {
       console.warn('Lỗi khôi phục phiên:', e);
       set({ user: null, token: null, isInitialized: true, isLoading: false });
     }
   },
 
-  login: async (emailOrId: string) => {
+  login: async (emailOrId: string, password?: string) => {
     set({ isLoading: true });
     try {
-      const { user, token } = await ApiService.login(emailOrId);
+      const { user, token } = await ApiService.login(emailOrId, password);
       await Promise.all([
         AuthStorage.saveToken(token),
         AuthStorage.saveUser(user),
+        AuthStorage.setExplicitlyLoggedOut(false),
       ]);
       set({ user, token, isLoading: false });
       return true;
@@ -75,16 +86,25 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
+  loginAsDemo: async (role: 'BUYER' | 'SELLER') => {
+    const email =
+      role === 'SELLER'
+        ? 'duykhoi.seller@dntu.edu.vn'
+        : '1923050528@dntu.edu.vn';
+    return await get().login(email, '123456');
+  },
+
   logout: async () => {
     set({ isLoading: true });
+    const currentToken = get().token;
     try {
       await Promise.all([
-        AuthStorage.deleteToken(),
-        AuthStorage.deleteUser(),
+        ApiService.logout(currentToken || undefined),
+        AuthStorage.clearAllAuth(),
       ]);
-      set({ user: null, token: null, isLoading: false });
     } catch (e) {
       console.warn('Đăng xuất gặp lỗi:', e);
+    } finally {
       set({ user: null, token: null, isLoading: false });
     }
   },
@@ -116,4 +136,3 @@ export const selectIsAuthenticated = (state: AuthState) => Boolean(state.user &&
 export const selectCurrentUser = (state: AuthState) => state.user;
 export const selectIsSeller = (state: AuthState) => state.user?.role === 'SELLER';
 export const selectIsBuyer = (state: AuthState) => state.user?.role === 'BUYER';
-

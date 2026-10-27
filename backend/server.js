@@ -375,25 +375,78 @@ const server = http.createServer(async (req, res) => {
       });
     }
 
-    // 3. Đăng nhập / Auth
+    // 3. Đăng nhập / Auth: POST /api/auth/login
     if (pathname === '/api/auth/login' && req.method === 'POST') {
       const body = await parseBody(req);
-      const email = (body.email || '').trim().toLowerCase();
-      const user = db.users.find(u => u.email.toLowerCase() === email || u.id === body.id);
+      const identifier = (body.email || body.id || body.mssv || '').trim().toLowerCase();
+      const password = (body.password || '').trim();
 
-      if (!user) {
-        // Cho phép đăng nhập demo dễ dàng
-        const defaultUser = db.users[0];
-        return sendJson(res, 200, {
-          token: `jwt-token-${defaultUser.id}-${Date.now()}`,
-          user: defaultUser,
-        });
+      if (!identifier) {
+        return sendJson(res, 400, { message: 'Vui lòng nhập Email hoặc Mã số sinh viên (MSSV).' });
       }
 
+      if (password && password.length < 4) {
+        return sendJson(res, 400, { message: 'Mật khẩu phải có tối thiểu 4 ký tự.' });
+      }
+
+      // Tìm kiếm người dùng theo email, mssv hoặc id
+      let user = db.users.find(
+        u =>
+          u.email.toLowerCase() === identifier ||
+          u.id.toLowerCase() === identifier ||
+          u.email.toLowerCase().startsWith(identifier)
+      );
+
+      // Nhận diện theo từ khóa đặc biệt (seller, clb, khôi, sinh viên)
+      if (!user) {
+        if (identifier.includes('seller') || identifier.includes('ban hang')) {
+          user = db.users.find(u => u.role === 'SELLER');
+        } else if (identifier.includes('clb') || identifier.includes('cntt')) {
+          user = db.users.find(u => u.id === 'USR-03');
+        } else if (identifier.includes('1923050528') || identifier.includes('khoi')) {
+          user = db.users.find(u => u.id === 'USR-01');
+        }
+      }
+
+      // Nếu không khớp sẵn, tự động tạo hồ sơ sinh viên DNTU mới
+      if (!user) {
+        const isDntuEmail = identifier.endsWith('@dntu.edu.vn');
+        user = {
+          id: `USR-${Date.now().toString().slice(-4)}`,
+          name: isDntuEmail ? `Sinh Viên ${identifier.split('@')[0]}` : `Sinh Viên DNTU (${identifier})`,
+          email: isDntuEmail ? identifier : `${identifier}@dntu.edu.vn`,
+          role: 'BUYER',
+          phone: '0901234567',
+          campusLocation: 'Khuôn viên DNTU, Biên Hòa',
+          avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
+          createdAt: new Date().toISOString(),
+        };
+        db.users.push(user);
+        saveData(db);
+      }
+
+      const token = `jwt-dntu-${user.id}-${Date.now()}`;
       return sendJson(res, 200, {
-        token: `jwt-token-${user.id}-${Date.now()}`,
+        token,
         user,
+        message: 'Đăng nhập thành công vào Chợ Sinh Viên DNTU.',
       });
+    }
+
+    // 3.1. Đăng xuất: POST /api/auth/logout
+    if (pathname === '/api/auth/logout' && req.method === 'POST') {
+      return sendJson(res, 200, {
+        status: 'ok',
+        message: 'Đăng xuất thành công, phiên làm việc an toàn đã kết thúc.',
+      });
+    }
+
+    // 3.2. Lấy thông tin tài khoản hiện tại: GET /api/auth/me
+    if (pathname === '/api/auth/me' && req.method === 'GET') {
+      const authHeader = req.headers['authorization'] || '';
+      const token = authHeader.replace(/^Bearer\s+/i, '');
+      const user = db.users.find(u => token.includes(u.id)) || db.users[0];
+      return sendJson(res, 200, { user, token });
     }
 
     // 4. Danh sách tin đăng

@@ -62,6 +62,18 @@ export default function CheckoutScreen() {
   }
 
   const handleConfirmOrder = async () => {
+    if (!currentUser) {
+      Alert.alert(
+        'Yêu cầu đăng nhập',
+        'Vui lòng đăng nhập tài khoản sinh viên DNTU để xác nhận và lưu đơn hàng của bạn.',
+        [
+          { text: 'Hủy', style: 'cancel' },
+          { text: 'Đăng nhập ngay', onPress: () => router.push('/login') },
+        ]
+      );
+      return;
+    }
+
     if (!pickupLocation.trim()) {
       Alert.alert('Thiếu thông tin', 'Vui lòng chọn hoặc nhập địa điểm nhận hàng trong trường.');
       return;

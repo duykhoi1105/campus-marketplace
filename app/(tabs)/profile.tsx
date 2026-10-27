@@ -21,6 +21,7 @@ export default function ProfileScreen() {
   const user = useAuthStore(state => state.user);
   const logout = useAuthStore(state => state.logout);
   const switchRole = useAuthStore(state => state.switchRole);
+  const loginAsDemo = useAuthStore(state => state.loginAsDemo);
 
   const favoriteCount = useFavoriteStore(selectFavoriteCount);
   const cartCount = useCartStore(selectCartItemCount);
@@ -30,7 +31,7 @@ export default function ProfileScreen() {
   const handleLogout = () => {
     Alert.alert(
       'Xác nhận đăng xuất',
-      'Bạn có chắc chắn muốn kết thúc phiên đăng nhập an toàn?',
+      'Bạn có chắc chắn muốn kết thúc phiên đăng nhập và xóa token an toàn khỏi thiết bị?',
       [
         { text: 'Hủy', style: 'cancel' },
         {
@@ -38,7 +39,10 @@ export default function ProfileScreen() {
           style: 'destructive',
           onPress: async () => {
             await logout();
-            router.push('/login');
+            Alert.alert(
+              'Đã đăng xuất',
+              'Phiên làm việc đã kết thúc thành công. Bạn đang duyệt Chợ với tư cách Khách.'
+            );
           },
         },
       ]
@@ -59,70 +63,157 @@ export default function ProfileScreen() {
       style={[styles.container, { backgroundColor: colors.background }]}
       contentContainerStyle={styles.content}
     >
-      {/* 1. THẺ THÔNG TIN TÀI KHOẢN */}
-      <View
-        style={[
-          styles.profileCard,
-          { backgroundColor: colors.backgroundCard, borderColor: colors.borderDefault },
-        ]}
-      >
-        <View style={styles.avatarRow}>
-          <View
-            style={[
-              styles.avatarCircle,
-              { backgroundColor: colors.tintSubtle, borderColor: colors.tint },
-            ]}
-          >
-            <Text style={{ fontSize: 36 }}>🎓</Text>
+      {/* 1. THẺ THÔNG TIN TÀI KHOẢN (ĐÃ ĐĂNG NHẬP / CHƯA ĐĂNG NHẬP) */}
+      {!user ? (
+        <View
+          style={[
+            styles.profileCard,
+            { backgroundColor: colors.backgroundCard, borderColor: colors.borderDefault },
+          ]}
+        >
+          <View style={styles.avatarRow}>
+            <View
+              style={[
+                styles.avatarCircle,
+                { backgroundColor: colors.backgroundSecondary, borderColor: colors.borderDefault },
+              ]}
+            >
+              <Text style={{ fontSize: 36 }}>👤</Text>
+            </View>
+
+            <View style={styles.userMeta}>
+              <Text style={[styles.userName, Typography.heading, { color: colors.textPrimary }]}>
+                Chưa đăng nhập
+              </Text>
+              <Text style={[Typography.bodySmall, { color: colors.textSecondary }]}>
+                Duyệt Chợ DNTU với tư cách Khách
+              </Text>
+            </View>
           </View>
 
-          <View style={styles.userMeta}>
-            <Text style={[styles.userName, Typography.heading, { color: colors.textPrimary }]}>
-              {user?.name || 'Nguyễn Duy Khôi'}
-            </Text>
-            <Text style={[Typography.bodySmall, { color: colors.textSecondary }]}>
-              {user?.email || '1923050528@dntu.edu.vn'}
-            </Text>
+          <Text
+            style={[
+              Typography.caption,
+              { color: colors.textSecondary, marginTop: Spacing.sm, marginBottom: Spacing.md },
+            ]}
+          >
+            Đăng nhập để đăng tin bán giáo trình, đặt hàng, quản lý tin đăng và lưu trữ sản phẩm yêu thích.
+          </Text>
 
-            <View style={styles.roleRow}>
-              <View
-                style={[
-                  styles.roleBadge,
-                  {
-                    backgroundColor: isSeller ? colors.warningBg : colors.infoBg,
-                    borderColor: isSeller ? colors.warning : colors.info,
-                  },
-                ]}
-              >
-                <Text
+          {/* Nút Đăng nhập chính */}
+          <TouchableOpacity
+            style={[styles.loginActionBtn, { backgroundColor: colors.tint }]}
+            onPress={() => router.push('/login')}
+            accessibilityRole="button"
+            accessibilityLabel="Mở màn hình đăng nhập tài khoản DNTU"
+          >
+            <Text style={[Typography.title, { color: colors.onTint, fontWeight: '700' }]}>
+              🔐 Đăng nhập tài khoản DNTU
+            </Text>
+          </TouchableOpacity>
+
+          {/* Đăng nhập nhanh demo */}
+          <View style={styles.demoRow}>
+            <TouchableOpacity
+              style={[
+                styles.demoQuickBtn,
+                { backgroundColor: colors.infoBg, borderColor: colors.info },
+              ]}
+              onPress={async () => {
+                await loginAsDemo('BUYER');
+                Alert.alert('Thành công', 'Đã đăng nhập tài khoản Người mua: Nguyễn Duy Khôi');
+              }}
+              accessibilityRole="button"
+              accessibilityLabel="Đăng nhập nhanh Người Mua"
+            >
+              <Text style={[Typography.caption, { color: colors.info, fontWeight: '700' }]}>
+                ⚡ Người Mua (Khôi)
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.demoQuickBtn,
+                { backgroundColor: colors.warningBg, borderColor: colors.warning },
+              ]}
+              onPress={async () => {
+                await loginAsDemo('SELLER');
+                Alert.alert('Thành công', 'Đã đăng nhập tài khoản Người bán: Store Sinh Viên DNTU');
+              }}
+              accessibilityRole="button"
+              accessibilityLabel="Đăng nhập nhanh Người Bán"
+            >
+              <Text style={[Typography.caption, { color: colors.warning, fontWeight: '700' }]}>
+                ⚡ Người Bán (Store)
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      ) : (
+        <View
+          style={[
+            styles.profileCard,
+            { backgroundColor: colors.backgroundCard, borderColor: colors.borderDefault },
+          ]}
+        >
+          <View style={styles.avatarRow}>
+            <View
+              style={[
+                styles.avatarCircle,
+                { backgroundColor: colors.tintSubtle, borderColor: colors.tint },
+              ]}
+            >
+              <Text style={{ fontSize: 36 }}>🎓</Text>
+            </View>
+
+            <View style={styles.userMeta}>
+              <Text style={[styles.userName, Typography.heading, { color: colors.textPrimary }]}>
+                {user.name}
+              </Text>
+              <Text style={[Typography.bodySmall, { color: colors.textSecondary }]}>
+                {user.email}
+              </Text>
+
+              <View style={styles.roleRow}>
+                <View
                   style={[
-                    styles.roleBadgeText,
-                    Typography.caption,
-                    { color: isSeller ? colors.warning : colors.info },
+                    styles.roleBadge,
+                    {
+                      backgroundColor: isSeller ? colors.warningBg : colors.infoBg,
+                      borderColor: isSeller ? colors.warning : colors.info,
+                    },
                   ]}
                 >
-                  {isSeller ? '🏷️ VAI TRÒ: NGƯỜI BÁN' : '🛒 VAI TRÒ: NGƯỜI MUA'}
-                </Text>
+                  <Text
+                    style={[
+                      styles.roleBadgeText,
+                      Typography.caption,
+                      { color: isSeller ? colors.warning : colors.info },
+                    ]}
+                  >
+                    {isSeller ? '🏷️ VAI TRÒ: NGƯỜI BÁN' : '🛒 VAI TRÒ: NGƯỜI MUA'}
+                  </Text>
+                </View>
               </View>
             </View>
           </View>
-        </View>
 
-        {/* Nút chuyển nhanh vai trò phục vụ chấm thi */}
-        <TouchableOpacity
-          style={[
-            styles.switchRoleBtn,
-            { backgroundColor: colors.backgroundSecondary, borderColor: colors.borderDefault },
-          ]}
-          onPress={handleToggleRole}
-          accessibilityRole="button"
-          accessibilityLabel="Chuyển đổi vai trò Người mua và Người bán"
-        >
-          <Text style={[Typography.bodySmall, { color: colors.tint, fontWeight: '700' }]}>
-            🔄 Chuyển sang vai trò: {isSeller ? 'Người mua (BUYER)' : 'Người bán (SELLER)'}
-          </Text>
-        </TouchableOpacity>
-      </View>
+          {/* Nút chuyển nhanh vai trò phục vụ chấm thi */}
+          <TouchableOpacity
+            style={[
+              styles.switchRoleBtn,
+              { backgroundColor: colors.backgroundSecondary, borderColor: colors.borderDefault },
+            ]}
+            onPress={handleToggleRole}
+            accessibilityRole="button"
+            accessibilityLabel="Chuyển đổi vai trò Người mua và Người bán"
+          >
+            <Text style={[Typography.bodySmall, { color: colors.tint, fontWeight: '700' }]}>
+              🔄 Chuyển sang vai trò: {isSeller ? 'Người mua (BUYER)' : 'Người bán (SELLER)'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/* 2. THỐNG KÊ NHANH */}
       <View style={styles.statsRow}>
@@ -243,7 +334,16 @@ export default function ProfileScreen() {
 
         <TouchableOpacity
           style={[styles.menuItem, { borderBottomColor: colors.borderLight }]}
-          onPress={() => router.push('/listing-form')}
+          onPress={() => {
+            if (!user) {
+              Alert.alert('Yêu cầu đăng nhập', 'Vui lòng đăng nhập để đăng tin rao bán.', [
+                { text: 'Đăng nhập', onPress: () => router.push('/login') },
+                { text: 'Hủy' },
+              ]);
+            } else {
+              router.push('/listing-form');
+            }
+          }}
           accessibilityRole="button"
           accessibilityLabel="Đăng tin rao bán món đồ mới"
         >
@@ -295,20 +395,22 @@ export default function ProfileScreen() {
         </Text>
       </View>
 
-      {/* 6. ĐĂNG XUẤT */}
-      <TouchableOpacity
-        style={[
-          styles.logoutBtn,
-          { backgroundColor: colors.dangerBg, borderColor: colors.danger },
-        ]}
-        onPress={handleLogout}
-        accessibilityRole="button"
-        accessibilityLabel="Đăng xuất khỏi ứng dụng an toàn"
-      >
-        <Text style={[styles.logoutText, Typography.bodyLarge, { color: colors.danger }]}>
-          🚪 Đăng xuất hoàn toàn
-        </Text>
-      </TouchableOpacity>
+      {/* 6. NÚT ĐĂNG XUẤT (CHỈ HIỂN THỊ KHI ĐÃ ĐĂNG NHẬP) */}
+      {user ? (
+        <TouchableOpacity
+          style={[
+            styles.logoutBtn,
+            { backgroundColor: colors.dangerBg, borderColor: colors.danger },
+          ]}
+          onPress={handleLogout}
+          accessibilityRole="button"
+          accessibilityLabel="Đăng xuất khỏi ứng dụng an toàn"
+        >
+          <Text style={[styles.logoutText, Typography.bodyLarge, { color: colors.danger }]}>
+            🚪 Đăng xuất hoàn toàn
+          </Text>
+        </TouchableOpacity>
+      ) : null}
     </ScrollView>
   );
 }
@@ -365,6 +467,27 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.md,
     borderWidth: 1,
     alignItems: 'center',
+  },
+  loginActionBtn: {
+    minHeight: TouchTarget.minHeight,
+    borderRadius: BorderRadius.md,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: Spacing.xs,
+  },
+  demoRow: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
+    marginTop: Spacing.sm,
+  },
+  demoQuickBtn: {
+    flex: 1,
+    minHeight: TouchTarget.minHeight - 6,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.xs,
   },
   statsRow: {
     flexDirection: 'row',
@@ -429,4 +552,3 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 });
-

@@ -5,6 +5,7 @@ import { User } from '@/types/marketplace';
 
 const TOKEN_KEY = 'campus_auth_session_token_1923050528';
 const USER_KEY = 'campus_auth_user_data_1923050528';
+const LOGGED_OUT_KEY = 'campus_auth_logged_out_flag_1923050528';
 
 export const AuthStorage = {
   /**
@@ -12,10 +13,8 @@ export const AuthStorage = {
    */
   async saveToken(token: string): Promise<void> {
     try {
-      if (Platform.OS === 'web') {
-        if (typeof window !== 'undefined' && window.localStorage) {
-          window.localStorage.setItem(TOKEN_KEY, token);
-        }
+      if (Platform.OS === 'web' && typeof window !== 'undefined' && window.localStorage) {
+        window.localStorage.setItem(TOKEN_KEY, token);
       } else {
         await SecureStore.setItemAsync(TOKEN_KEY, token);
       }
@@ -29,11 +28,8 @@ export const AuthStorage = {
    */
   async getToken(): Promise<string | null> {
     try {
-      if (Platform.OS === 'web') {
-        if (typeof window !== 'undefined' && window.localStorage) {
-          return window.localStorage.getItem(TOKEN_KEY);
-        }
-        return null;
+      if (Platform.OS === 'web' && typeof window !== 'undefined' && window.localStorage) {
+        return window.localStorage.getItem(TOKEN_KEY);
       }
       return await SecureStore.getItemAsync(TOKEN_KEY);
     } catch (e) {
@@ -47,10 +43,8 @@ export const AuthStorage = {
    */
   async deleteToken(): Promise<void> {
     try {
-      if (Platform.OS === 'web') {
-        if (typeof window !== 'undefined' && window.localStorage) {
-          window.localStorage.removeItem(TOKEN_KEY);
-        }
+      if (Platform.OS === 'web' && typeof window !== 'undefined' && window.localStorage) {
+        window.localStorage.removeItem(TOKEN_KEY);
       } else {
         await SecureStore.deleteItemAsync(TOKEN_KEY);
       }
@@ -94,5 +88,42 @@ export const AuthStorage = {
       console.warn('Lỗi khi xóa thông tin người dùng:', e);
     }
   },
-};
 
+  /**
+   * Kiểm tra xem người dùng đã chủ động đăng xuất hay chưa
+   */
+  async isExplicitlyLoggedOut(): Promise<boolean> {
+    try {
+      const flag = await AsyncStorage.getItem(LOGGED_OUT_KEY);
+      return flag === 'true';
+    } catch {
+      return false;
+    }
+  },
+
+  /**
+   * Ghi nhận trạng thái chủ động đăng xuất
+   */
+  async setExplicitlyLoggedOut(loggedOut: boolean): Promise<void> {
+    try {
+      if (loggedOut) {
+        await AsyncStorage.setItem(LOGGED_OUT_KEY, 'true');
+      } else {
+        await AsyncStorage.removeItem(LOGGED_OUT_KEY);
+      }
+    } catch (e) {
+      console.warn('Lỗi ghi nhận cờ đăng xuất:', e);
+    }
+  },
+
+  /**
+   * Xóa toàn bộ dữ liệu phiên đăng nhập an toàn
+   */
+  async clearAllAuth(): Promise<void> {
+    await Promise.all([
+      this.deleteToken(),
+      this.deleteUser(),
+      this.setExplicitlyLoggedOut(true),
+    ]);
+  },
+};

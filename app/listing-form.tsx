@@ -275,6 +275,58 @@ export default function ListingFormModal() {
     );
   }
 
+  // Chặn đăng tin nếu chưa đăng nhập
+  if (!currentUser) {
+    return (
+      <View style={[styles.loadingCenter, { backgroundColor: colors.background, padding: Spacing.xl }]}>
+        <Text style={{ fontSize: 50, textAlign: 'center' }}>🔒</Text>
+        <Text
+          style={[
+            styles.pageTitle,
+            Typography.heading,
+            { color: colors.textPrimary, textAlign: 'center', marginTop: Spacing.md },
+          ]}
+        >
+          Yêu cầu đăng nhập
+        </Text>
+        <Text
+          style={[
+            Typography.body,
+            {
+              color: colors.textSecondary,
+              textAlign: 'center',
+              marginTop: Spacing.xs,
+              marginBottom: Spacing.lg,
+            },
+          ]}
+        >
+          Bạn cần đăng nhập tài khoản sinh viên DNTU để đăng tin bán giáo trình và đồ dùng trên Chợ.
+        </Text>
+        <TouchableOpacity
+          style={[
+            styles.submitBtn,
+            { backgroundColor: colors.tint, width: '100%' },
+          ]}
+          onPress={() => router.push('/login')}
+          accessibilityRole="button"
+          accessibilityLabel="Đăng nhập tài khoản"
+        >
+          <Text style={[styles.submitBtnText, Typography.title, { color: colors.onTint }]}>
+            🔐 Đăng nhập ngay
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={{ marginTop: Spacing.md, padding: Spacing.sm }}
+          onPress={() => router.back()}
+          accessibilityRole="button"
+          accessibilityLabel="Quay lại trang trước"
+        >
+          <Text style={[Typography.bodySmall, { color: colors.textMuted }]}>Quay lại</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
   return (
     <ScrollView
       style={[styles.container, { backgroundColor: colors.background }]}
