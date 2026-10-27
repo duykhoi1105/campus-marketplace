@@ -11,3 +11,4 @@ export const getItemAsync = async (key: string): Promise<string | null> => {
 export const deleteItemAsync = async (key: string): Promise<void> => {
   secureMap.delete(key);
 };
+

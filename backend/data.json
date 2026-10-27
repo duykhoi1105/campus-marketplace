@@ -29,9 +29,37 @@
       "campusLocation": "Văn phòng Đoàn Khoa CNTT",
       "avatarUrl": "https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=150",
       "createdAt": "2026-10-15T09:00:00.000Z"
+    },
+    {
+      "id": "USR-5900",
+      "name": "Sinh Viên DNTU (312312313)",
+      "email": "312312313@dntu.edu.vn",
+      "role": "BUYER",
+      "phone": "0901234567",
+      "campusLocation": "Khuôn viên DNTU, Biên Hòa",
+      "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150",
+      "createdAt": "2026-10-27T18:00:55.900Z"
     }
   ],
   "listings": [
+    {
+      "id": "LIST-348243",
+      "sellerId": "USR-01",
+      "sellerName": "Nguyễn Duy Khôi",
+      "sellerPhone": "0901234567",
+      "title": "dasdsad",
+      "description": "",
+      "category": "textbooks",
+      "price": 56666666,
+      "stock": 0,
+      "photoUri": "https://images.unsplash.com/photo-1532012164546-f432f2e3777f?w=600",
+      "originalPhotoSize": 2845690,
+      "compressedPhotoSize": 108450,
+      "createdAt": "2026-10-27T17:32:28.243Z",
+      "updatedAt": "2026-10-27T17:32:28.243Z",
+      "isAvailable": false,
+      "condition": "used"
+    },
     {
       "id": "LIST-01",
       "sellerId": "USR-02",
@@ -41,7 +69,7 @@
       "description": "Sách photo bìa bóng kính, có sẵn note bài tập chương 3 và 4 thi giữa kỳ, tình trạng còn rất mới.",
       "category": "textbooks",
       "price": 45000,
-      "stock": 4,
+      "stock": 1,
       "photoUri": "https://images.unsplash.com/photo-1532012164546-f432f2e3777f?w=600",
       "createdAt": "2026-10-20T08:00:00.000Z",
       "updatedAt": "2026-10-20T08:00:00.000Z",
@@ -57,7 +85,7 @@
       "description": "Máy chính hãng Bitex còn tem bảo hành 1 năm, pin tốt, phục vụ thi toán cao cấp và xác suất thống kê.",
       "category": "electronics",
       "price": 320000,
-      "stock": 2,
+      "stock": 1,
       "photoUri": "https://images.unsplash.com/photo-1587145820266-a5951ee6f620?w=600",
       "createdAt": "2026-10-21T09:30:00.000Z",
       "updatedAt": "2026-10-21T09:30:00.000Z",
@@ -209,5 +237,72 @@
       "condition": "used"
     }
   ],
-  "orders": []
+  "orders": [
+    {
+      "id": "ORD-321629",
+      "buyerId": "USR-01",
+      "buyerName": "Nguyễn Duy Khôi",
+      "items": [
+        {
+          "listingId": "LIST-01",
+          "title": "Giáo trình Cấu trúc dữ liệu & Giải thuật DNTU",
+          "price": 45000,
+          "quantity": 3,
+          "photoUri": "https://images.unsplash.com/photo-1532012164546-f432f2e3777f?w=600"
+        }
+      ],
+      "subtotal": 135000,
+      "shippingMethod": "DORM_DELIVERY",
+      "shippingFee": 10000,
+      "total": 145000,
+      "pickupLocation": "Cổng chính Trường ĐH Công nghệ Đồng Nai",
+      "note": "",
+      "status": "CONFIRMED",
+      "createdAt": "2026-10-27T18:22:01.629Z"
+    },
+    {
+      "id": "ORD-359600",
+      "buyerId": "USR-02",
+      "buyerName": "Duy Khôi (Sinh Viên Bán Hàng)",
+      "items": [
+        {
+          "listingId": "LIST-348243",
+          "title": "dasdsad",
+          "price": 56666666,
+          "quantity": 1,
+          "photoUri": "https://images.unsplash.com/photo-1532012164546-f432f2e3777f?w=600"
+        }
+      ],
+      "subtotal": 56666666,
+      "shippingMethod": "CAMPUS_PICKUP",
+      "shippingFee": 0,
+      "total": 56666666,
+      "pickupLocation": "Cổng chính Trường ĐH Công nghệ Đồng Nai",
+      "note": "",
+      "status": "CONFIRMED",
+      "createdAt": "2026-10-27T17:32:39.600Z"
+    },
+    {
+      "id": "ORD-312922",
+      "buyerId": "USR-01",
+      "buyerName": "Nguyễn Duy Khôi",
+      "items": [
+        {
+          "listingId": "LIST-02",
+          "title": "Máy tính cầm tay Casio fx-580VN X",
+          "price": 320000,
+          "quantity": 1,
+          "photoUri": "https://images.unsplash.com/photo-1587145820266-a5951ee6f620?w=600"
+        }
+      ],
+      "subtotal": 320000,
+      "shippingMethod": "CAMPUS_PICKUP",
+      "shippingFee": 0,
+      "total": 320000,
+      "pickupLocation": "Cổng chính Trường ĐH Công nghệ Đồng Nai",
+      "note": "",
+      "status": "CONFIRMED",
+      "createdAt": "2026-10-27T17:31:52.922Z"
+    }
+  ]
 }

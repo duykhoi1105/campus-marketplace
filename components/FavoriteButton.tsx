@@ -1,7 +1,9 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet } from 'react-native';
+import { Pressable, Text, StyleSheet } from 'react-native';
+import { useRouter } from 'expo-router';
 import { useAppTheme } from '@/hooks/useThemeColor';
 import { useFavoriteStore } from '@/store/useFavoriteStore';
+import { useAuthStore } from '@/store/useAuthStore';
 import { Listing } from '@/types/marketplace';
 import { TouchTarget, BorderRadius } from '@/constants/layout';
 
@@ -11,17 +13,25 @@ interface FavoriteButtonProps {
 }
 
 export function FavoriteButton({ listing, size = 20 }: FavoriteButtonProps) {
+  const router = useRouter();
   const { colors } = useAppTheme();
-  const isFav = useFavoriteStore(state => state.favoriteIds.includes(listing.id));
+  const user = useAuthStore(state => state.user);
+  const isFav = useFavoriteStore(state =>
+    state.favoriteIds.includes(listing.id)
+  );
   const toggleFavorite = useFavoriteStore(state => state.toggleFavorite);
 
-  const handlePress = async (e: any) => {
-    e?.stopPropagation?.();
+  const handlePress = async () => {
+    if (!user) {
+      router.push('/login');
+      return;
+    }
+
     await toggleFavorite(listing);
   };
 
   return (
-    <TouchableOpacity
+    <Pressable
       style={[
         styles.button,
         {
@@ -32,12 +42,14 @@ export function FavoriteButton({ listing, size = 20 }: FavoriteButtonProps) {
       onPress={handlePress}
       accessibilityRole="button"
       accessibilityLabel={
-        isFav
-          ? `Bỏ yêu thích món ${listing.title}`
-          : `Thêm vào danh sách yêu thích món ${listing.title}`
+        !user
+          ? `Đăng nhập để yêu thích ${listing.title}`
+          : isFav
+            ? `Bỏ yêu thích món ${listing.title}`
+            : `Thêm vào danh sách yêu thích món ${listing.title}`
       }
       accessibilityState={{ selected: isFav }}
-      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+      hitSlop={10}
     >
       <Text
         style={{
@@ -47,7 +59,7 @@ export function FavoriteButton({ listing, size = 20 }: FavoriteButtonProps) {
       >
         {isFav ? '❤️' : '🤍'}
       </Text>
-    </TouchableOpacity>
+    </Pressable>
   );
 }
 
@@ -61,4 +73,3 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
 });
-

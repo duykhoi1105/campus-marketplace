@@ -1,3 +1,4 @@
+
 import { Platform } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -7,123 +8,155 @@ const TOKEN_KEY = 'campus_auth_session_token_1923050528';
 const USER_KEY = 'campus_auth_user_data_1923050528';
 const LOGGED_OUT_KEY = 'campus_auth_logged_out_flag_1923050528';
 
+const isWeb = Platform.OS === 'web';
+
+const webStorageAvailable = (): boolean =>
+  typeof window !== 'undefined' && !!window.localStorage;
+
 export const AuthStorage = {
-  /**
-   * Lưu Token bí mật qua SecureStore (Native) hoặc fallback an toàn
-   */
   async saveToken(token: string): Promise<void> {
     try {
-      if (Platform.OS === 'web' && typeof window !== 'undefined' && window.localStorage) {
+      if (isWeb) {
+        if (!webStorageAvailable()) {
+          throw new Error('localStorage không khả dụng');
+        }
         window.localStorage.setItem(TOKEN_KEY, token);
       } else {
         await SecureStore.setItemAsync(TOKEN_KEY, token);
       }
-    } catch (e) {
-      console.warn('Lỗi khi lưu token an toàn:', e);
+    } catch (error) {
+      console.warn('Lỗi lưu token:', error);
+      throw error;
     }
   },
 
-  /**
-   * Lấy Token bí mật
-   */
   async getToken(): Promise<string | null> {
     try {
-      if (Platform.OS === 'web' && typeof window !== 'undefined' && window.localStorage) {
+      if (isWeb) {
+        if (!webStorageAvailable()) return null;
         return window.localStorage.getItem(TOKEN_KEY);
       }
       return await SecureStore.getItemAsync(TOKEN_KEY);
-    } catch (e) {
-      console.warn('Lỗi khi đọc token an toàn:', e);
+    } catch (error) {
+      console.warn('Lỗi đọc token:', error);
       return null;
     }
   },
 
-  /**
-   * Xóa Token bí mật khi đăng xuất
-   */
   async deleteToken(): Promise<void> {
     try {
-      if (Platform.OS === 'web' && typeof window !== 'undefined' && window.localStorage) {
-        window.localStorage.removeItem(TOKEN_KEY);
+      if (isWeb) {
+        if (webStorageAvailable()) {
+          window.localStorage.removeItem(TOKEN_KEY);
+        }
       } else {
         await SecureStore.deleteItemAsync(TOKEN_KEY);
       }
-    } catch (e) {
-      console.warn('Lỗi khi xóa token an toàn:', e);
+    } catch (error) {
+      console.warn('Lỗi xóa token:', error);
     }
   },
 
-  /**
-   * Lưu thông tin profile người dùng không nhạy cảm
-   */
   async saveUser(user: User): Promise<void> {
     try {
-      await AsyncStorage.setItem(USER_KEY, JSON.stringify(user));
-    } catch (e) {
-      console.warn('Lỗi khi lưu thông tin người dùng:', e);
+      const value = JSON.stringify(user);
+
+      if (isWeb) {
+        if (!webStorageAvailable()) {
+          throw new Error('localStorage không khả dụng');
+        }
+        window.localStorage.setItem(USER_KEY, value);
+      } else {
+        await AsyncStorage.setItem(USER_KEY, value);
+      }
+    } catch (error) {
+      console.warn('Lỗi lưu thông tin người dùng:', error);
+      throw error;
     }
   },
 
-  /**
-   * Lấy thông tin profile người dùng
-   */
   async getUser(): Promise<User | null> {
     try {
-      const raw = await AsyncStorage.getItem(USER_KEY);
+      let raw: string | null;
+
+      if (isWeb) {
+        if (!webStorageAvailable()) return null;
+        raw = window.localStorage.getItem(USER_KEY);
+      } else {
+        raw = await AsyncStorage.getItem(USER_KEY);
+      }
+
       if (!raw) return null;
       return JSON.parse(raw) as User;
-    } catch (e) {
-      console.warn('Lỗi khi đọc thông tin người dùng:', e);
+    } catch (error) {
+      console.warn('Lỗi đọc thông tin người dùng:', error);
       return null;
     }
   },
 
-  /**
-   * Xóa thông tin profile người dùng
-   */
   async deleteUser(): Promise<void> {
     try {
-      await AsyncStorage.removeItem(USER_KEY);
-    } catch (e) {
-      console.warn('Lỗi khi xóa thông tin người dùng:', e);
+      if (isWeb) {
+        if (webStorageAvailable()) {
+          window.localStorage.removeItem(USER_KEY);
+        }
+      } else {
+        await AsyncStorage.removeItem(USER_KEY);
+      }
+    } catch (error) {
+      console.warn('Lỗi xóa thông tin người dùng:', error);
     }
   },
 
-  /**
-   * Kiểm tra xem người dùng đã chủ động đăng xuất hay chưa
-   */
   async isExplicitlyLoggedOut(): Promise<boolean> {
     try {
-      const flag = await AsyncStorage.getItem(LOGGED_OUT_KEY);
+      let flag: string | null;
+
+      if (isWeb) {
+        if (!webStorageAvailable()) return false;
+        flag = window.localStorage.getItem(LOGGED_OUT_KEY);
+      } else {
+        flag = await AsyncStorage.getItem(LOGGED_OUT_KEY);
+      }
+
       return flag === 'true';
-    } catch {
+    } catch (error) {
+      console.warn('Lỗi đọc cờ đăng xuất:', error);
       return false;
     }
   },
 
-  /**
-   * Ghi nhận trạng thái chủ động đăng xuất
-   */
   async setExplicitlyLoggedOut(loggedOut: boolean): Promise<void> {
     try {
-      if (loggedOut) {
+      if (isWeb) {
+        if (!webStorageAvailable()) {
+          throw new Error('localStorage không khả dụng');
+        }
+
+        if (loggedOut) {
+          window.localStorage.setItem(LOGGED_OUT_KEY, 'true');
+        } else {
+          window.localStorage.removeItem(LOGGED_OUT_KEY);
+        }
+      } else if (loggedOut) {
         await AsyncStorage.setItem(LOGGED_OUT_KEY, 'true');
       } else {
         await AsyncStorage.removeItem(LOGGED_OUT_KEY);
       }
-    } catch (e) {
-      console.warn('Lỗi ghi nhận cờ đăng xuất:', e);
+    } catch (error) {
+      console.warn('Lỗi cập nhật cờ đăng xuất:', error);
+      throw error;
     }
   },
 
-  /**
-   * Xóa toàn bộ dữ liệu phiên đăng nhập an toàn
-   */
   async clearAllAuth(): Promise<void> {
     await Promise.all([
       this.deleteToken(),
       this.deleteUser(),
-      this.setExplicitlyLoggedOut(true),
     ]);
+
+    // Giữ cờ đăng xuất để lần tải trang tiếp theo
+    // không tự khôi phục phiên cũ.
+    await this.setExplicitlyLoggedOut(true);
   },
 };

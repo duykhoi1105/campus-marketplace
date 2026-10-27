@@ -24,67 +24,74 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   isLoading: false,
   isInitialized: false,
 
-  restoreSession: async () => {
-    set({ isLoading: true });
-    try {
-      const [token, user, isLoggedOut] = await Promise.all([
-        AuthStorage.getToken(),
-        AuthStorage.getUser(),
-        AuthStorage.isExplicitlyLoggedOut(),
-      ]);
+  
 
-      if (token && user) {
-        set({ token, user, isInitialized: true, isLoading: false });
-        return;
-      }
+restoreSession: async () => {
+  set({ isLoading: true });
 
-      // Nếu người dùng đã chủ động đăng xuất, tôn trọng trạng thái đăng xuất (giữ null)
-      if (isLoggedOut) {
-        set({ user: null, token: null, isInitialized: true, isLoading: false });
-        return;
-      }
+  try {
+    const [token, user, isLoggedOut] = await Promise.all([
+      AuthStorage.getToken(),
+      AuthStorage.getUser(),
+      AuthStorage.isExplicitlyLoggedOut(),
+    ]);
 
-      // Khởi tạo tài khoản sinh viên DNTU mặc định cho lần đầu khởi chạy sạch trên máy giám khảo
-      const defaultUser: User = {
-        id: 'USR-01',
-        name: 'Nguyễn Duy Khôi',
-        email: '1923050528@dntu.edu.vn',
-        role: 'BUYER',
-        phone: '0901234567',
-        campusLocation: 'Ký túc xá Khu B, DNTU',
-        avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
-        createdAt: '2026-10-14T08:00:00.000Z',
-      };
-      const defaultToken = `init-token-${defaultUser.id}`;
-      await Promise.all([
-        AuthStorage.saveToken(defaultToken),
-        AuthStorage.saveUser(defaultUser),
-        AuthStorage.setExplicitlyLoggedOut(false),
-      ]);
-      set({ user: defaultUser, token: defaultToken, isInitialized: true, isLoading: false });
-    } catch (e) {
-      console.warn('Lỗi khôi phục phiên:', e);
-      set({ user: null, token: null, isInitialized: true, isLoading: false });
+    if (token && user && !isLoggedOut) {
+      set({
+        token,
+        user,
+        isInitialized: true,
+        isLoading: false,
+      });
+      return;
     }
-  },
 
-  login: async (emailOrId: string, password?: string) => {
-    set({ isLoading: true });
-    try {
-      const { user, token } = await ApiService.login(emailOrId, password);
-      await Promise.all([
-        AuthStorage.saveToken(token),
-        AuthStorage.saveUser(user),
-        AuthStorage.setExplicitlyLoggedOut(false),
-      ]);
-      set({ user, token, isLoading: false });
-      return true;
-    } catch (e) {
-      console.warn('Đăng nhập thất bại:', e);
-      set({ isLoading: false });
-      return false;
-    }
-  },
+    set({
+      token: null,
+      user: null,
+      isInitialized: true,
+      isLoading: false,
+    });
+  } catch (error) {
+    console.warn('Lỗi khôi phục phiên:', error);
+
+    set({
+      token: null,
+      user: null,
+      isInitialized: true,
+      isLoading: false,
+    });
+  }
+},
+
+
+
+login: async (emailOrId: string, password?: string) => {
+  set({ isLoading: true });
+
+  try {
+    const { user, token } = await ApiService.login(emailOrId, password);
+
+    await Promise.all([
+      AuthStorage.saveToken(token),
+      AuthStorage.saveUser(user),
+      AuthStorage.setExplicitlyLoggedOut(false),
+    ]);
+
+    set({
+      user,
+      token,
+      isLoading: false,
+      isInitialized: true,
+    });
+
+    return true;
+  } catch (error) {
+    console.warn('Đăng nhập thất bại:', error);
+    set({ isLoading: false });
+    return false;
+  }
+},
 
   loginAsDemo: async (role: 'BUYER' | 'SELLER') => {
     const email =
@@ -94,20 +101,54 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     return await get().login(email, '123456');
   },
 
-  logout: async () => {
-    set({ isLoading: true });
-    const currentToken = get().token;
+
+
+logout: async () => {
+  const currentToken = get().token;
+
+  // Cập nhật giao diện ngay lập tức.
+  set({
+    user: null,
+    token: null,
+    isLoading: true,
+  });
+
+  try {
+    // Đánh dấu đăng xuất; không phụ thuộc vào API.
     try {
-      await Promise.all([
-        ApiService.logout(currentToken || undefined),
-        AuthStorage.clearAllAuth(),
-      ]);
-    } catch (e) {
-      console.warn('Đăng xuất gặp lỗi:', e);
-    } finally {
-      set({ user: null, token: null, isLoading: false });
+      await AuthStorage.setExplicitlyLoggedOut(true);
+    } catch (error) {
+      console.warn('Không thể lưu trạng thái đăng xuất:', error);
     }
-  },
+
+    // API lỗi cũng không được ngăn việc xóa phiên cục bộ.
+    try {
+      await ApiService.logout(currentToken || undefined);
+    } catch (error) {
+      console.warn('Không thể gọi API đăng xuất:', error);
+    }
+  } finally {
+    try {
+      await AuthStorage.clearAllAuth();
+    } catch (error) {
+      console.warn('Lỗi xóa dữ liệu xác thực:', error);
+    }
+
+    // Ghi lại cờ sau khi xóa token và user.
+    try {
+      await AuthStorage.setExplicitlyLoggedOut(true);
+    } catch (error) {
+      console.warn('Không thể lưu lại trạng thái đăng xuất:', error);
+    }
+
+    set({
+      user: null,
+      token: null,
+      isLoading: false,
+      isInitialized: true,
+    });
+  }
+},
 
   switchRole: async (newRole: UserRole) => {
     const current = get().user;

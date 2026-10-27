@@ -28,26 +28,17 @@ export default function ProfileScreen() {
 
   const isSeller = user?.role === 'SELLER';
 
-  const handleLogout = () => {
-    Alert.alert(
-      'Xác nhận đăng xuất',
-      'Bạn có chắc chắn muốn kết thúc phiên đăng nhập và xóa token an toàn khỏi thiết bị?',
-      [
-        { text: 'Hủy', style: 'cancel' },
-        {
-          text: 'Đăng xuất',
-          style: 'destructive',
-          onPress: async () => {
-            await logout();
-            Alert.alert(
-              'Đã đăng xuất',
-              'Phiên làm việc đã kết thúc thành công. Bạn đang duyệt Chợ với tư cách Khách.'
-            );
-          },
-        },
-      ]
-    );
-  };
+
+const handleLogout = async () => {
+  try {
+    await logout();
+    router.replace('/login');
+  } catch (error) {
+    console.error('Lỗi đăng xuất:', error);
+    router.replace('/login');
+  }
+};
+
 
   const handleToggleRole = async () => {
     const nextRole = isSeller ? 'BUYER' : 'SELLER';

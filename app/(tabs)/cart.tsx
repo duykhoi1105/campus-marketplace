@@ -50,16 +50,17 @@ export default function CartScreen() {
     }
   };
 
-  const handleClearPrompt = () => {
-    Alert.alert(
-      'Xóa toàn bộ giỏ hàng',
-      'Bạn có chắc chắn muốn làm trống toàn bộ giỏ hàng không?',
-      [
-        { text: 'Hủy', style: 'cancel' },
-        { text: 'Xóa hết', style: 'destructive', onPress: () => clearCart() },
-      ]
+const handleClearPrompt = () => {
+  if (typeof window !== 'undefined') {
+    const confirmed = window.confirm(
+      'Bạn có chắc chắn muốn làm trống toàn bộ giỏ hàng không?'
     );
-  };
+
+    if (confirmed) {
+      void clearCart();
+    }
+  }
+};
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>

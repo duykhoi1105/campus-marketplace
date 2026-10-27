@@ -24,41 +24,48 @@ export default function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
-  const handleLogin = async (customEmail?: string, customPassword?: string) => {
-    const targetEmail = (customEmail !== undefined ? customEmail : email).trim();
-    const targetPass = (customPassword !== undefined ? customPassword : password).trim();
+  
+const handleLogin = async (
+  customEmail?: string,
+  customPassword?: string
+) => {
+  const targetEmail = (
+    customEmail !== undefined ? customEmail : email
+  ).trim();
 
-    if (!targetEmail) {
-      setErrorMsg('Vui lòng nhập Email sinh viên hoặc Mã số sinh viên (MSSV).');
-      return;
-    }
+  const targetPass = (
+    customPassword !== undefined ? customPassword : password
+  ).trim();
 
-    if (targetPass && targetPass.length < 4) {
-      setErrorMsg('Mật khẩu bảo mật phải có tối thiểu 4 ký tự.');
-      return;
-    }
+  if (!targetEmail) {
+    setErrorMsg(
+      'Vui lòng nhập Email sinh viên hoặc Mã số sinh viên (MSSV).'
+    );
+    return;
+  }
 
-    setErrorMsg('');
-    const success = await login(targetEmail, targetPass || '123456');
+  if (targetPass.length < 4) {
+    setErrorMsg('Mật khẩu phải có tối thiểu 4 ký tự.');
+    return;
+  }
 
-    if (success) {
-      if (router.canGoBack()) {
-        router.back();
-      } else {
-        router.replace('/(tabs)');
-      }
-    } else {
-      setErrorMsg('Không thể đăng nhập. Vui lòng kiểm tra lại thông tin hoặc mạng.');
-    }
-  };
+  setErrorMsg('');
 
-  const handleGuestContinue = () => {
-    if (router.canGoBack()) {
-      router.back();
-    } else {
-      router.replace('/(tabs)');
-    }
-  };
+  const success = await login(targetEmail, targetPass);
+
+  if (success) {
+    router.replace('/(tabs)');
+  } else {
+    setErrorMsg(
+      'Không thể đăng nhập. Vui lòng kiểm tra lại thông tin hoặc mạng.'
+    );
+  }
+}; // Quan trọng: đóng hàm handleLogin tại đây
+
+const handleGuestContinue = () => {
+  router.replace('/(tabs)');
+};
+
 
   return (
     <ScrollView

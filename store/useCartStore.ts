@@ -166,14 +166,37 @@ export const useCartStore = create<CartState>((set, get) => ({
     return { success: true };
   },
 
-  removeFromCart: (listingId: string) => {
-    const nextItems = get().items.filter(item => item.listingId !== listingId);
-    set({ items: nextItems });
-    AsyncStorage.setItem(
-      CART_STORAGE_KEY,
-      JSON.stringify({ items: nextItems, shippingMethod: get().shippingMethod })
-    ).catch(console.warn);
-  },
+ removeFromCart: (listingId: string) => {
+  const currentItems = get().items;
+
+  const nextItems = currentItems.filter(
+    item => item.listingId !== listingId
+  );
+
+  // Không tìm thấy sản phẩm cần xóa
+  if (nextItems.length === currentItems.length) {
+    console.warn('Không tìm thấy sản phẩm cần xóa:', listingId);
+    console.warn(
+      'Các ID hiện có:',
+      currentItems.map(item => item.listingId)
+    );
+    return;
+  }
+
+  // Cập nhật giao diện ngay lập tức
+  set({ items: nextItems });
+
+  // Lưu đúng danh sách mới vào bộ nhớ
+  AsyncStorage.setItem(
+    CART_STORAGE_KEY,
+    JSON.stringify({
+      items: nextItems,
+      shippingMethod: get().shippingMethod,
+    })
+  ).catch(error => {
+    console.warn('Lỗi lưu giỏ hàng sau khi xóa:', error);
+  });
+},
 
   setShippingMethod: (method: ShippingMethod) => {
     set({ shippingMethod: method });

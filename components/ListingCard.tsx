@@ -2,7 +2,7 @@ import React from 'react';
 import {
   View,
   Text,
-  TouchableOpacity,
+  Pressable,
   StyleSheet,
 } from 'react-native';
 import { Image } from 'expo-image';
@@ -15,7 +15,12 @@ import { useCartStore } from '@/store/useCartStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import { formatCurrency } from '@/utils/cartCalculations';
 import { getSmartImageByTitle } from '@/utils/smartProductImage';
-import { Spacing, BorderRadius, Typography, TouchTarget } from '@/constants/layout';
+import {
+  Spacing,
+  BorderRadius,
+  Typography,
+  TouchTarget,
+} from '@/constants/layout';
 
 interface ListingCardProps {
   listing: Listing;
@@ -34,22 +39,28 @@ export function ListingCard({ listing, onPress }: ListingCardProps) {
   const handleCardPress = () => {
     if (onPress) {
       onPress();
-    } else {
-      router.push({
-        pathname: '/listing/[id]',
-        params: { id: listing.id },
-      });
+      return;
     }
+
+    router.push({
+      pathname: '/listing/[id]',
+      params: { id: listing.id },
+    });
   };
 
-  const handleQuickAdd = (e: any) => {
-    e?.stopPropagation?.();
+  const handleQuickAdd = () => {
+    if (!currentUser) {
+      router.push('/login');
+      return;
+    }
+
     if (isOwnListing || isOutOfStock) return;
+
     addToCart(listing, 1);
   };
 
   return (
-    <TouchableOpacity
+    <View
       style={[
         styles.card,
         {
@@ -57,31 +68,38 @@ export function ListingCard({ listing, onPress }: ListingCardProps) {
           borderColor: colors.borderDefault,
         },
       ]}
-      onPress={handleCardPress}
-      activeOpacity={0.85}
-      accessibilityRole="button"
-      accessibilityLabel={`${listing.title}, giá ${formatCurrency(listing.price)}, còn ${listing.stock} sản phẩm`}
     >
-      {/* Ảnh sản phẩm + nút yêu thích góc phải */}
+      {/* Ảnh sản phẩm: nhấn để xem chi tiết */}
       <View style={styles.imageWrapper}>
-        <Image
-          source={{
-            uri:
-              listing.photoUri && listing.photoUri.trim()
-                ? listing.photoUri
-                : getSmartImageByTitle(listing.title, listing.category).url,
-          }}
-          style={styles.image}
-          contentFit="cover"
-          transition={250}
-          accessibilityLabel={`Ảnh sản phẩm ${listing.title}`}
-        />
+        <Pressable
+          style={StyleSheet.absoluteFill}
+          onPress={handleCardPress}
+          accessibilityRole="button"
+          accessibilityLabel={`Xem chi tiết ${listing.title}`}
+        >
+          <Image
+            source={{
+              uri:
+                listing.photoUri && listing.photoUri.trim()
+                  ? listing.photoUri
+                  : getSmartImageByTitle(
+                      listing.title,
+                      listing.category
+                    ).url,
+            }}
+            style={styles.image}
+            contentFit="cover"
+            transition={250}
+            accessibilityLabel={`Ảnh sản phẩm ${listing.title}`}
+          />
+        </Pressable>
+
+        {/* Nút yêu thích là phần tử độc lập với nút xem chi tiết */}
         <View style={styles.favoriteWrapper}>
           <FavoriteButton listing={listing} size={18} />
         </View>
       </View>
 
-      {/* Thông tin sản phẩm */}
       <View style={styles.infoContainer}>
         <View style={styles.badgeRow}>
           <StockBadge stock={listing.stock} />
@@ -89,38 +107,52 @@ export function ListingCard({ listing, onPress }: ListingCardProps) {
             <View
               style={[
                 styles.ownBadge,
-                { backgroundColor: colors.tintSubtle, borderColor: colors.tint },
+                {
+                  backgroundColor: colors.tintSubtle,
+                  borderColor: colors.tint,
+                },
               ]}
             >
-              <Text style={[styles.ownBadgeText, Typography.caption, { color: colors.tint }]}>
+              <Text
+                style={[
+                  styles.ownBadgeText,
+                  Typography.caption,
+                  { color: colors.tint },
+                ]}
+              >
                 Của bạn
               </Text>
             </View>
           ) : null}
         </View>
 
-        <Text
-          style={[
-            styles.title,
-            Typography.bodyLarge,
-            { color: colors.textPrimary },
-          ]}
-          numberOfLines={2}
+        <Pressable
+          onPress={handleCardPress}
+          accessibilityRole="button"
+          accessibilityLabel={`Xem chi tiết ${listing.title}`}
         >
-          {listing.title}
-        </Text>
+          <Text
+            style={[
+              styles.title,
+              Typography.bodyLarge,
+              { color: colors.textPrimary },
+            ]}
+            numberOfLines={2}
+          >
+            {listing.title}
+          </Text>
 
-        <Text
-          style={[
-            styles.price,
-            Typography.title,
-            { color: colors.tint, marginTop: Spacing.xs },
-          ]}
-        >
-          {formatCurrency(listing.price)}
-        </Text>
+          <Text
+            style={[
+              styles.price,
+              Typography.title,
+              { color: colors.tint, marginTop: Spacing.xs },
+            ]}
+          >
+            {formatCurrency(listing.price)}
+          </Text>
+        </Pressable>
 
-        {/* Nút hành động nhanh */}
         <View style={styles.footerRow}>
           <Text
             style={[
@@ -134,34 +166,49 @@ export function ListingCard({ listing, onPress }: ListingCardProps) {
           </Text>
 
           {!isOwnListing ? (
-            <TouchableOpacity
+            <Pressable
               style={[
                 styles.cartButton,
                 {
-                  backgroundColor: isOutOfStock ? colors.borderDefault : colors.tint,
+                  backgroundColor:
+                    isOutOfStock
+                      ? colors.borderDefault
+                      : colors.tint,
                 },
               ]}
               onPress={handleQuickAdd}
               disabled={isOutOfStock}
               accessibilityRole="button"
               accessibilityLabel={
-                isOutOfStock ? 'Hết hàng, không thể thêm' : `Thêm ${listing.title} vào giỏ hàng`
+                isOutOfStock
+                  ? 'Hết hàng, không thể thêm'
+                  : !currentUser
+                    ? 'Đăng nhập để thêm vào giỏ hàng'
+                    : `Thêm ${listing.title} vào giỏ hàng`
               }
             >
               <Text
                 style={[
                   styles.cartButtonText,
                   Typography.caption,
-                  { color: isOutOfStock ? colors.textMuted : colors.onTint },
+                  {
+                    color: isOutOfStock
+                      ? colors.textMuted
+                      : colors.onTint,
+                  },
                 ]}
               >
-                {isOutOfStock ? 'Hết hàng' : '+ Giỏ hàng'}
+                {isOutOfStock
+                  ? 'Hết hàng'
+                  : !currentUser
+                    ? 'Đăng nhập'
+                    : '+ Giỏ hàng'}
               </Text>
-            </TouchableOpacity>
+            </Pressable>
           ) : null}
         </View>
       </View>
-    </TouchableOpacity>
+    </View>
   );
 }
 
@@ -185,6 +232,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: Spacing.sm,
     right: Spacing.sm,
+    zIndex: 2,
   },
   infoContainer: {
     padding: Spacing.md,
@@ -232,4 +280,3 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 });
-
