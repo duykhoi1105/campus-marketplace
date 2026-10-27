@@ -281,6 +281,59 @@ function parseBody(req) {
   });
 }
 
+// Tự động gán hình ảnh chuẩn theo tên sản phẩm trường đại học
+function getSmartFallbackImage(title, category) {
+  const t = (title || '').toLowerCase();
+  if (t.includes('casio') || t.includes('fx') || t.includes('may tinh cam tay')) {
+    return 'https://images.unsplash.com/photo-1587145820266-a5951ee6f620?w=600';
+  }
+  if (t.includes('giao trinh') || t.includes('sach') || t.includes('tai lieu') || t.includes('toan')) {
+    return 'https://images.unsplash.com/photo-1532012164546-f432f2e3777f?w=600';
+  }
+  if (t.includes('chuot') || t.includes('mouse') || t.includes('logitech')) {
+    return 'https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?w=600';
+  }
+  if (t.includes('ban phim') || t.includes('keyboard')) {
+    return 'https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=600';
+  }
+  if (t.includes('tai nghe') || t.includes('sony') || t.includes('headphone')) {
+    return 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600';
+  }
+  if (t.includes('ao') || t.includes('dong phuc')) {
+    return 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=600';
+  }
+  if (t.includes('binh dun') || t.includes('am dun') || t.includes('sieu toc')) {
+    return 'https://images.unsplash.com/photo-1574269909862-7e1d70bb8078?w=600';
+  }
+  if (t.includes('binh nuoc') || t.includes('giu nhiet')) {
+    return 'https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=600';
+  }
+  if (t.includes('vo') || t.includes('tap') || t.includes('so tay') || t.includes('campus')) {
+    return 'https://images.unsplash.com/photo-1589829085413-56de8ae18c73?w=600';
+  }
+  if (t.includes('ban hoc') || t.includes('ban gap')) {
+    return 'https://images.unsplash.com/photo-1518455027359-f3f8164ba6bd?w=600';
+  }
+  if (t.includes('balo') || t.includes('cap sach')) {
+    return 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=600';
+  }
+  if (t.includes('the nho') || t.includes('usb') || t.includes('sandisk')) {
+    return 'https://images.unsplash.com/photo-1597740985671-2a8a3b80532e?w=600';
+  }
+  if (t.includes('quat')) {
+    return 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=600';
+  }
+  if (t.includes('den')) {
+    return 'https://images.unsplash.com/photo-1507473885765-e6ed057f782c?w=600';
+  }
+  if (category === 'textbooks') return 'https://images.unsplash.com/photo-1532012164546-f432f2e3777f?w=600';
+  if (category === 'electronics') return 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600';
+  if (category === 'stationery') return 'https://images.unsplash.com/photo-1589829085413-56de8ae18c73?w=600';
+  if (category === 'living') return 'https://images.unsplash.com/photo-1518455027359-f3f8164ba6bd?w=600';
+  if (category === 'uniforms') return 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=600';
+  return 'https://images.unsplash.com/photo-1589829085413-56de8ae18c73?w=600';
+}
+
 const server = http.createServer(async (req, res) => {
   // Bật CORS cho Preflight request
   if (req.method === 'OPTIONS') {
@@ -435,8 +488,9 @@ const server = http.createServer(async (req, res) => {
       if (!body.title || !body.title.trim()) {
         return sendJson(res, 400, { message: 'Tiêu đề tin đăng không được để trống.' });
       }
-      if (!body.photoUri || !body.photoUri.trim()) {
-        return sendJson(res, 400, { message: 'Bắt buộc phải có ít nhất một ảnh hợp lệ.' });
+      let photoUri = (body.photoUri || '').trim();
+      if (!photoUri) {
+        photoUri = getSmartFallbackImage(body.title, body.category);
       }
       const price = Number(body.price);
       if (isNaN(price) || price < 0) {
@@ -457,7 +511,7 @@ const server = http.createServer(async (req, res) => {
         category: body.category || 'other',
         price,
         stock,
-        photoUri: body.photoUri,
+        photoUri,
         originalPhotoSize: body.originalPhotoSize || null,
         compressedPhotoSize: body.compressedPhotoSize || null,
         createdAt: new Date().toISOString(),

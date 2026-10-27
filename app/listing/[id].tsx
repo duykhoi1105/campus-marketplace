@@ -19,6 +19,7 @@ import { LoadingView, ErrorView } from '@/components/FeedbackStates';
 import { useCartStore } from '@/store/useCartStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import { formatCurrency } from '@/utils/cartCalculations';
+import { getSmartImageByTitle } from '@/utils/smartProductImage';
 import { Spacing, BorderRadius, Typography, TouchTarget } from '@/constants/layout';
 
 export default function ListingDetailScreen() {
@@ -115,7 +116,12 @@ export default function ListingDetailScreen() {
         {/* Ảnh sản phẩm lớn */}
         <View style={styles.imageContainer}>
           <Image
-            source={{ uri: listing.photoUri }}
+            source={{
+              uri:
+                listing.photoUri && listing.photoUri.trim()
+                  ? listing.photoUri
+                  : getSmartImageByTitle(listing.title, listing.category).url,
+            }}
             style={styles.heroImage}
             contentFit="cover"
             transition={300}

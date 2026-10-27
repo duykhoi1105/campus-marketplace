@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   StyleSheet,
 } from 'react-native';
+import { useShallow } from 'zustand/react/shallow';
 import { useRouter } from 'expo-router';
 import { Image } from 'expo-image';
 import { useAppTheme } from '@/hooks/useThemeColor';
@@ -21,7 +22,9 @@ export default function FavoritesScreen() {
   const { colors } = useAppTheme();
 
   const isHydrated = useFavoriteStore(state => state.isHydrated);
-  const snapshots = useFavoriteStore(selectFavoriteSnapshots);
+  const snapshots = useFavoriteStore(
+  useShallow(selectFavoriteSnapshots)
+);
   const removeFavorite = useFavoriteStore(state => state.removeFavorite);
   const addToCart = useCartStore(state => state.addToCart);
 

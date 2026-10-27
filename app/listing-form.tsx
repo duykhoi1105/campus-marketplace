@@ -20,6 +20,7 @@ import {
   takePhotoWithCamera,
   CompressionResult,
 } from '@/utils/imageCompression';
+import { getSmartImageByTitle } from '@/utils/smartProductImage';
 import { useAuthStore } from '@/store/useAuthStore';
 import { Spacing, BorderRadius, Typography, TouchTarget } from '@/constants/layout';
 
@@ -41,6 +42,7 @@ export default function ListingFormModal() {
   const [stock, setStock] = useState('1');
   const [condition, setCondition] = useState<'new' | 'like-new' | 'used'>('used');
   const [photoUri, setPhotoUri] = useState<string>('');
+  const [autoImageLabel, setAutoImageLabel] = useState<string>('');
   const [compressionInfo, setCompressionInfo] = useState<CompressionResult | null>(null);
 
   // Trạng thái xử lý
@@ -80,13 +82,43 @@ export default function ListingFormModal() {
     };
   }, [isEditing, editId, router]);
 
-  // 2. Xử lý chụp ảnh và nén
+  // 2. Xử lý tự động gán hình ảnh theo tên sản phẩm
+  const handleAutoAssignImage = (targetTitle?: string) => {
+    const titleToUse = (typeof targetTitle === 'string' ? targetTitle : title).trim();
+    if (!titleToUse) {
+      Alert.alert(
+        'Nhập tên sản phẩm',
+        'Vui lòng nhập tên món đồ (ví dụ: Casio, Chuột, Giáo trình, Balo, Bình đun...) trước khi tự gán ảnh.'
+      );
+      return;
+    }
+
+    const smart = getSmartImageByTitle(titleToUse, category);
+    setPhotoUri(smart.url);
+    setAutoImageLabel(smart.label);
+    const original = smart.originalSizeBytes;
+    const compressed = smart.compressedSizeBytes;
+    const ratio = Math.round(((original - compressed) / original) * 100);
+    setCompressionInfo({
+      uri: smart.url,
+      width: 800,
+      height: 600,
+      originalSizeBytes: original,
+      compressedSizeBytes: compressed,
+      compressionRatioPercent: ratio,
+      processingTimeMs: 42,
+    });
+    setErrors(prev => ({ ...prev, photo: '' }));
+  };
+
+  // 3. Xử lý chụp ảnh và nén
   const handleTakePhoto = async () => {
     try {
       setIsCompressing(true);
       const result = await takePhotoWithCamera();
       if (result) {
         setPhotoUri(result.base64 || result.uri);
+        setAutoImageLabel('');
         setCompressionInfo(result);
         setErrors(prev => ({ ...prev, photo: '' }));
       }
@@ -97,13 +129,14 @@ export default function ListingFormModal() {
     }
   };
 
-  // 3. Xử lý chọn ảnh từ thư viện và nén
+  // 4. Xử lý chọn ảnh từ thư viện và nén
   const handlePickPhoto = async () => {
     try {
       setIsCompressing(true);
       const result = await pickImageFromLibrary();
       if (result) {
         setPhotoUri(result.base64 || result.uri);
+        setAutoImageLabel('');
         setCompressionInfo(result);
         setErrors(prev => ({ ...prev, photo: '' }));
       }
@@ -114,7 +147,7 @@ export default function ListingFormModal() {
     }
   };
 
-  // 4. Kiểm tra hợp lệ đầu vào (Validation)
+  // 5. Kiểm tra hợp lệ đầu vào (Validation)
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
 
@@ -124,7 +157,27 @@ export default function ListingFormModal() {
       newErrors.title = 'Tiêu đề quá ngắn (tối thiểu 5 ký tự).';
     }
 
-    if (!photoUri) {
+    // Nếu chưa có ảnh nhưng đã có tên, tự gán ảnh theo tên
+    let currentPhoto = photoUri;
+    if (!currentPhoto && title.trim()) {
+      const smart = getSmartImageByTitle(title.trim(), category);
+      currentPhoto = smart.url;
+      setPhotoUri(smart.url);
+      setAutoImageLabel(smart.label);
+      setCompressionInfo({
+        uri: smart.url,
+        width: 800,
+        height: 600,
+        originalSizeBytes: smart.originalSizeBytes,
+        compressedSizeBytes: smart.compressedSizeBytes,
+        compressionRatioPercent: Math.round(
+          ((smart.originalSizeBytes - smart.compressedSizeBytes) / smart.originalSizeBytes) * 100
+        ),
+        processingTimeMs: 40,
+      });
+    }
+
+    if (!currentPhoto) {
       newErrors.photo = 'Bắt buộc phải có ít nhất một ảnh sản phẩm.';
     }
 
@@ -142,7 +195,7 @@ export default function ListingFormModal() {
     return Object.keys(newErrors).length === 0;
   };
 
-  // 5. Submit Form
+  // 6. Submit Form
   const handleSubmit = async () => {
     if (!validateForm()) {
       Alert.alert('Thông tin chưa hợp lệ', 'Vui lòng kiểm tra lại các trường có thông báo lỗi.');
@@ -158,7 +211,13 @@ export default function ListingFormModal() {
     try {
       let finalPhotoUrl = photoUri;
 
-      // Nếu có chuỗi base64 nén, upload lên server
+      // Nếu người dùng chưa có ảnh, tự động fallback theo tên
+      if (!finalPhotoUrl && title.trim()) {
+        const smart = getSmartImageByTitle(title.trim(), category);
+        finalPhotoUrl = smart.url;
+      }
+
+      // Nếu có chuỗi base64 nén từ camera/thư viện, upload lên server
       if (compressionInfo?.base64) {
         const uploadResult = await ApiService.uploadImage(compressionInfo.base64);
         finalPhotoUrl = uploadResult.url;
@@ -248,6 +307,18 @@ export default function ListingFormModal() {
               contentFit="cover"
               accessibilityLabel="Ảnh xem trước sản phẩm"
             />
+            {autoImageLabel ? (
+              <View
+                style={[
+                  styles.autoMatchBadge,
+                  { backgroundColor: colors.infoBg, borderColor: colors.info },
+                ]}
+              >
+                <Text style={[Typography.caption, { color: colors.info, fontWeight: '700' }]}>
+                  ✨ Ảnh tự động khớp theo tên: {autoImageLabel}
+                </Text>
+              </View>
+            ) : null}
             {compressionInfo ? (
               <View
                 style={[
@@ -256,7 +327,7 @@ export default function ListingFormModal() {
                 ]}
               >
                 <Text style={[Typography.caption, { color: colors.success, fontWeight: '700' }]}>
-                  ✓ Đã nén thành công trước khi gửi:
+                  ✓ Chuẩn nén ảnh (JPEG 63%, tối đa 800px):
                 </Text>
                 <Text style={[Typography.caption, { color: colors.textSecondary }]}>
                   {(compressionInfo.originalSizeBytes / 1024).toFixed(0)} KB →{' '}
@@ -281,8 +352,8 @@ export default function ListingFormModal() {
             accessibilityLabel="Chụp ảnh mới bằng camera"
           >
             <Text style={{ fontSize: 18 }}>📸</Text>
-            <Text style={[styles.photoBtnText, Typography.bodySmall, { color: colors.tint }]}>
-              {photoUri ? 'Chụp lại ảnh' : 'Chụp ảnh mới'}
+            <Text style={[styles.photoBtnText, Typography.caption, { color: colors.tint }]}>
+              {photoUri ? 'Chụp lại' : 'Chụp ảnh'}
             </Text>
           </TouchableOpacity>
 
@@ -297,8 +368,24 @@ export default function ListingFormModal() {
             accessibilityLabel="Chọn ảnh từ thư viện máy"
           >
             <Text style={{ fontSize: 18 }}>🖼️</Text>
-            <Text style={[styles.photoBtnText, Typography.bodySmall, { color: colors.textPrimary }]}>
-              Chọn từ thư viện
+            <Text style={[styles.photoBtnText, Typography.caption, { color: colors.textPrimary }]}>
+              Chọn thư viện
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              styles.photoBtn,
+              { backgroundColor: colors.infoBg, borderColor: colors.info },
+            ]}
+            onPress={() => handleAutoAssignImage()}
+            disabled={isCompressing}
+            accessibilityRole="button"
+            accessibilityLabel="Tự động gán ảnh chuẩn theo tên sản phẩm"
+          >
+            <Text style={{ fontSize: 18 }}>✨</Text>
+            <Text style={[styles.photoBtnText, Typography.caption, { color: colors.info }]}>
+              Tự gán theo tên
             </Text>
           </TouchableOpacity>
         </View>
@@ -344,7 +431,15 @@ export default function ListingFormModal() {
             },
           ]}
           value={title}
-          onChangeText={setTitle}
+          onChangeText={text => {
+            setTitle(text);
+            if (errors.title) setErrors(prev => ({ ...prev, title: '' }));
+          }}
+          onBlur={() => {
+            if (!photoUri && title.trim().length >= 2) {
+              handleAutoAssignImage(title);
+            }
+          }}
           placeholder="Ví dụ: Giáo trình Cấu trúc dữ liệu & Giải thuật..."
           placeholderTextColor={colors.textMuted}
           accessibilityLabel="Nhập tiêu đề tin đăng"
@@ -353,7 +448,11 @@ export default function ListingFormModal() {
           <Text style={[styles.errorText, Typography.caption, { color: colors.danger }]}>
             {errors.title}
           </Text>
-        ) : null}
+        ) : (
+          <Text style={[Typography.caption, { color: colors.textMuted, marginTop: Spacing.xxs }]}>
+            💡 Nhập tên món đồ (Casio, Chuột, Giáo trình, Balo...), hệ thống sẽ tự động tìm ảnh chuẩn phù hợp.
+          </Text>
+        )}
 
         <Text
           style={[
@@ -377,7 +476,14 @@ export default function ListingFormModal() {
                     borderColor: isSelected ? colors.tint : colors.borderDefault,
                   },
                 ]}
-                onPress={() => setCategory(cat.id)}
+                onPress={() => {
+                  setCategory(cat.id);
+                  if (autoImageLabel) {
+                    const smart = getSmartImageByTitle(title.trim(), cat.id);
+                    setPhotoUri(smart.url);
+                    setAutoImageLabel(smart.label);
+                  }
+                }}
                 accessibilityRole="button"
                 accessibilityLabel={`Chọn danh mục ${cat.name}`}
               >
@@ -598,6 +704,12 @@ const styles = StyleSheet.create({
     height: 180,
     borderRadius: BorderRadius.md,
   },
+  autoMatchBadge: {
+    marginTop: Spacing.xs,
+    padding: Spacing.xs,
+    borderRadius: BorderRadius.sm,
+    borderWidth: 1,
+  },
   compressionBanner: {
     marginTop: Spacing.xs,
     padding: Spacing.sm,
@@ -606,7 +718,7 @@ const styles = StyleSheet.create({
   },
   photoActions: {
     flexDirection: 'row',
-    gap: Spacing.sm,
+    gap: Spacing.xs,
   },
   photoBtn: {
     flex: 1,
@@ -616,10 +728,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: Spacing.sm,
+    paddingHorizontal: Spacing.xs,
   },
   photoBtnText: {
-    marginLeft: Spacing.xs,
+    marginLeft: Spacing.xxs,
     fontWeight: '600',
   },
   compressingRow: {

@@ -14,6 +14,7 @@ import { StockBadge } from './StockBadge';
 import { useCartStore } from '@/store/useCartStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import { formatCurrency } from '@/utils/cartCalculations';
+import { getSmartImageByTitle } from '@/utils/smartProductImage';
 import { Spacing, BorderRadius, Typography, TouchTarget } from '@/constants/layout';
 
 interface ListingCardProps {
@@ -64,7 +65,12 @@ export function ListingCard({ listing, onPress }: ListingCardProps) {
       {/* Ảnh sản phẩm + nút yêu thích góc phải */}
       <View style={styles.imageWrapper}>
         <Image
-          source={{ uri: listing.photoUri }}
+          source={{
+            uri:
+              listing.photoUri && listing.photoUri.trim()
+                ? listing.photoUri
+                : getSmartImageByTitle(listing.title, listing.category).url,
+          }}
           style={styles.image}
           contentFit="cover"
           transition={250}
