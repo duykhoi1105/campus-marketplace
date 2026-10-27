@@ -1,0 +1,82 @@
+================================================================================
+KỊCH BẢN QUAY VIDEO DEMO ĐỒ ÁN CUỐI KỲ (3 - 5 PHÚT)
+(DEMO VIDEO SCRIPT & PRESENTATION OUTLINE)
+Đề tài 02: Chợ Mua Bán Trong Khuôn Viên Trường (Campus Marketplace)
+Học phần: Phát triển ứng dụng di động - Lớp: TH7011101 (23DTH1)
+Trường Đại học Công nghệ Đồng Nai - Khoa Công nghệ Thông tin
+Sinh viên thực hiện: Nguyễn Duy Khôi (MSSV: 1923050528)
+Thời lượng dự kiến: 4 phút 15 giây
+================================================================================
+
+[00:00 - 00:25] PHẦN 1: GIỚI THIỆU & ĐĂNG NHẬP / DUY TRÌ PHIÊN (25 giây)
+- Thao tác trên màn hình:
+  + Mở ứng dụng, hiển thị màn hình Đăng nhập `app/login.tsx`.
+  + Giới thiệu thông tin: Sinh viên Nguyễn Duy Khôi, MSSV 1923050528, Lớp 23DTH1, Đề tài 02 - Chợ mua bán trong khuôn viên trường DNTU.
+  + Nhấn nút đăng nhập demo một chạm "Người Mua (Duy Khôi)".
+  + Ứng dụng điều hướng vào màn hình chính Chợ DNTU.
+  + Tắt app hoàn toàn rồi mở lại: Chứng minh phiên đăng nhập được duy trì an toàn (sử dụng Expo SecureStore trên native / localStorage trên web), không cần đăng nhập lại.
+
+[00:25 - 01:05] PHẦN 2: DUYỆT CHỢ, TÌM KIẾM & LỌC DANH MỤC (40 giây)
+- Thao tác trên màn hình:
+  + Giới thiệu danh sách tin đăng tải từ backend REST API Node.js qua TanStack Query.
+  + Thao tác lọc danh mục: Nhấn chọn "Giáo trình & Sách", "Đồ điện tử", "Đồng phục" -> Danh sách cập nhật tức thời theo chip được chọn.
+  + Thao tác tìm kiếm:
+    * Gõ chữ không dấu: "giao trinh" -> Lọc ra ngay "Giáo trình Cấu trúc dữ liệu & Giải thuật".
+    * Gõ chữ hoa: "CASIO" -> Lọc ra "Máy tính cầm tay Casio fx-580VN X".
+  + Nhấn nút "X" trên ô tìm kiếm để xóa từ khóa -> Danh sách khôi phục đầy đủ.
+  + Nhấn mạnh với giảng viên: Toàn bộ quá trình tìm kiếm và lọc danh mục được tính toán dẫn xuất (useMemo) trong quá trình render, không lưu state dẫn xuất bị trùng lặp theo đúng đề cương.
+
+[01:05 - 01:45] PHẦN 3: XEM CHI TIẾT TIN & ĐỒNG BỘ YÊU THÍCH BỀN VỮNG (40 giây)
+- Thao tác trên màn hình:
+  + Nhấn vào món "Giáo trình Cấu trúc dữ liệu & Giải thuật" -> Mở route động `app/listing/[id].tsx`.
+  + Giới thiệu chi tiết: Ảnh lớn, thông tin người bán, tình trạng còn hàng (StockBadge), mô tả sản phẩm.
+  + Nhấn biểu tượng trái tim để Thêm vào Yêu thích -> Icon chuyển sang màu đỏ.
+  + Chuyển sang Tab "Yêu thích" (`app/(tabs)/favorites.tsx`): Thấy món đồ xuất hiện ngay lập tức và badge tab hiển thị số 1.
+  + Bấm nút "Bỏ lưu" tại màn hình Yêu thích -> Quay lại màn hình Chợ -> Biểu tượng trái tim trên thẻ tin đăng lập tức đồng bộ chuyển về trạng thái chưa lưu.
+  + Khẳng định: Cả 2 màn hình cùng sử dụng chung Zustand Store có selectors và lưu trữ bền vững qua AsyncStorage.
+
+[01:45 - 02:35] PHẦN 4: ĐĂNG TIN MỚI & CHỨNG MINH NÉN ẢNH CLIENT-SIDE (50 giây)
+- Thao tác trên màn hình:
+  + Nhấn nút Floating Action Button (+ Đăng tin) -> Mở modal route `app/listing-form.tsx`.
+  + Nhập tiêu đề: "Bình giữ nhiệt Lock&Lock 500ml DNTU".
+  + Chọn danh mục: "Đồ dùng ký túc xá".
+  + Chọn ảnh từ thư viện thiết bị:
+    * Màn hình lập tức hiển thị tiến trình nén ảnh bằng Expo Image Manipulator.
+    * Chỉ ra cho giảng viên thấy dòng thông báo bằng chứng nén ảnh thực tế: "Ảnh gốc: 2.8 MB → Đã nén: 108 KB (Giảm 96.19%) trong 84ms".
+  + Nhập giá bán: "75000", Tồn kho: "2".
+  + Nhấn "Đăng tin ngay" -> Ứng dụng gửi request lên API, lưu tin thành công và quay về trang Chợ.
+  + Tin đăng mới xuất hiện ngay đầu danh sách Chợ DNTU.
+
+[02:35 - 03:15] PHẦN 5: GIỎ HÀNG, QUY TẮC TỒN KHO & THANH TOÁN CAMPUS (40 giây)
+- Thao tác trên màn hình:
+  + Thêm một món đồ vào giỏ hàng.
+  + Chuyển sang Tab "Giỏ hàng" (`app/(tabs)/cart.tsx`):
+    * Tăng số lượng sản phẩm: Thử bấm tăng vượt quá số lượng tồn kho -> Ứng dụng bật cảnh báo giới hạn tồn kho, không cho đặt vượt quá.
+    * Thử giảm số lượng về 0 -> Ứng dụng xóa món đồ khỏi giỏ.
+  + Nhấn "Tiến hành đặt hàng" -> Chuyển sang màn hình Tóm tắt thanh toán `app/checkout.tsx`.
+  + Giới thiệu quy tắc giao nhận theo đề cương:
+    * Chọn "Hẹn gặp trực tiếp trong trường (Campus Pickup)" -> Phí vận chuyển: 0 VNĐ.
+    * Chọn "Giao tận phòng Ký túc xá (Dorm Delivery)" -> Phí 10.000 VNĐ (miễn phí nếu đơn >= 200.000 VNĐ).
+  + Nhập địa điểm nhận hàng: "Sảnh tòa nhà A1, DNTU".
+  + Nhấn "Xác nhận đặt hàng" -> Đơn hàng hoàn tất, giỏ hàng tự động làm trống, tồn kho của người bán được trừ thực tế.
+
+[03:15 - 03:45] PHẦN 6: CHẾ ĐỘ NGOẠI TUYẾN (OFFLINE) & BANNER GẦN NHẤT (30 giây)
+- Thao tác trên màn hình:
+  + Giả lập mất kết nối mạng (tắt Wi-Fi / tắt backend server).
+  + Kéo làm mới lại màn hình Chợ:
+    * Ứng dụng KHÔNG bị trắng màn hình (No blank screen).
+    * Hiển thị ngay banner màu cam: "⚠️ Bạn đang ngoại tuyến — Đang xem dữ liệu gần nhất (Lần tải thành công: 22:30 27/10)".
+    * Toàn bộ danh mục tin đăng đã lưu trong cache AsyncStorage vẫn hiển thị đầy đủ và người dùng vẫn xem được bình thường.
+  + Bật lại kết nối -> Nhấn nút "Kết nối lại" -> Banner tự động ẩn và dữ liệu cập nhật mới nhất.
+
+[03:45 - 04:15] PHẦN 7: THEME SÁNG/TỐI, PHÂN QUYỀN VAI TRÒ & KẾT THÚC (30 giây)
+- Thao tác trên màn hình:
+  + Chuyển sang Tab "Tài khoản" (`app/(tabs)/profile.tsx`).
+  + Trình diễn chuyển đổi Theme: Nhấn chuyển sang "Tối (Dark)" -> Toàn bộ ứng dụng đổi màu nền tối mượt mà, độ tương phản chữ rõ nét.
+  + Nhấn chuyển lại "Sáng (Light)".
+  + Nhấn mạnh: Toàn bộ ứng dụng dùng chung 1 file token màu duy nhất (`constants/colors.ts`), kiểm toán quét 0 mã hex ngoài file quy định.
+  + Trình diễn nút chuyển nhanh vai trò Người mua / Người bán (Buyer <-> Seller).
+  + Nhấn "Đăng xuất hoàn toàn" để kết thúc phiên an toàn.
+  + Lời cảm ơn thầy cô và giảng viên bộ môn Phát triển ứng dụng di động - Trường ĐH Công nghệ Đồng Nai.
+================================================================================
+

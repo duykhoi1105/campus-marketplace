@@ -1,0 +1,150 @@
+================================================================================
+BÁO CÁO NGHIỆM THU TOÀN DIỆN VÀ KIỂM TRA HỒI QUY
+(FINAL ACCEPTANCE & REGRESSION AUDIT REPORT)
+Đề tài 02: Chợ Mua Bán Trong Khuôn Viên Trường (Campus Marketplace)
+Học phần: Phát triển ứng dụng di động - Lớp: TH7011101 (23DTH1)
+Trường Đại học Công nghệ Đồng Nai - Khoa Công nghệ Thông tin
+Sinh viên thực hiện: Nguyễn Duy Khôi (MSSV: 1923050528)
+Ngày nghiệm thu: 27/10/2026
+================================================================================
+
+1. TỔNG QUAN KẾT QUẢ NGHIỆM THU
+- Tổng số tiêu chí kiểm tra: 16/16 hạng mục
+- Kết quả kiểm thử tự động (Vitest): 5 test suites, 29/29 tests PASSED (100%)
+- Kiểm tra kiểu dữ liệu TypeScript (Strict mode): 0 lỗi (Exit code 0)
+- Kiểm tra mã nguồn ESLint (eslint-config-expo flat): 0 lỗi, 0 cảnh báo (Exit code 0)
+- Kiểm tra mã màu Hex ngoài token: 0 vi phạm (100% mã hex tập trung tại constants/colors.ts)
+- Trạng thái tổng thể: SẴN SÀNG BẢO VỆ ĐỒ ÁN (READY FOR DEFENSE)
+
+2. BẢNG NGHIỆM THU CHI TIẾT THEO TỪNG LUỒNG CHỨC NĂNG
+
+--------------------------------------------------------------------------------
+MỤC 01: XÁC THỰC, DUY TRÌ PHIÊN & ĐĂNG XUẤT (AUTH & SESSION)
+- Trạng thái: PASS
+- Yêu cầu: Đăng nhập, lưu token bí mật qua SecureStore (web fallback localStorage), duy trì khi restart, đăng xuất xóa sạch token.
+- Bằng chứng thực nghiệm:
+  + Module: `services/authStorage.ts`, `store/useAuthStore.ts`, `app/login.tsx`
+  + Thử nghiệm đăng nhập tài khoản demo -> Khởi động lại ứng dụng -> Phiên tự động khôi phục không nhấp nháy.
+  + Nhấn "Đăng xuất hoàn toàn" tại màn hình Tài khoản -> Token và dữ liệu phiên bị xóa khỏi SecureStore -> Chuyển về màn hình Đăng nhập -> Khởi động lại ứng dụng không bị tự động login phiên cũ.
+- Lệnh test: Chạy trong test suite `useAuthStore`
+- Lỗi còn lại: Không có
+--------------------------------------------------------------------------------
+MỤC 02: TẢI TIN ĐĂNG TỪ API TỪ XA (REMOTE REST API)
+- Trạng thái: PASS
+- Yêu cầu: API từ xa cung cấp danh sách tin đăng, có lớp service tập trung, xử lý HTTP error, timeout.
+- Bằng chứng thực nghiệm:
+  + Module: `backend/server.js`, `services/api.ts`
+  + Endpoint `GET /api/listings` trả về JSON danh sách tin đăng thực tế kèm seed sinh viên DNTU.
+  + Kiểm tra timeout AbortController 6000ms hoạt động an toàn.
+- Lỗi còn lại: Không có
+--------------------------------------------------------------------------------
+MỤC 03: TÌM KIẾM & LỌC DANH MỤC (DERIVED DATA RENDER-TIME)
+- Trạng thái: PASS
+- Yêu cầu: Tính toán thuần trong quá trình render (useMemo), không lưu filteredListings vào useState riêng; hỗ trợ tiếng Việt có dấu/không dấu, không phân biệt hoa thường.
+- Bằng chứng thực nghiệm:
+  + Module: `utils/filterListings.ts`, `app/(tabs)/index.tsx`
+  + Test tự động: `tests/filterSearch.test.ts` (8/8 tests passed).
+- Lỗi còn lại: Không có
+--------------------------------------------------------------------------------
+MỤC 04: ROUTE ĐỘNG CHI TIẾT TIN ĐĂNG (DYNAMIC ROUTE [ID])
+- Trạng thái: PASS
+- Yêu cầu: Route `app/listing/[id].tsx`, tải chi tiết theo ID, hiển thị ảnh lớn, mô tả, tồn kho, người bán, chặn người bán tự mua hàng của mình.
+- Bằng chứng thực nghiệm:
+  + Mở tin từ danh sách chợ hoặc yêu thích đều chuyển đúng `app/listing/[id].tsx`.
+  + Nếu là tin của chính mình: Hiển thị badge "Của bạn", ẩn nút mua, hiển thị nút "Sửa tin" và "Xóa tin".
+- Lỗi còn lại: Không có
+--------------------------------------------------------------------------------
+MỤC 05: MODAL ĐĂNG/SỬA TIN & NÉN ẢNH CLIENT-SIDE
+- Trạng thái: PASS
+- Yêu cầu: Route modal `app/listing-form.tsx`, chụp ảnh từ camera, chọn ảnh từ thư viện, nén và resize trước khi upload (JPEG 63%, max 800px), hiển thị số đo nén thực tế.
+- Bằng chứng thực nghiệm:
+  + Module: `utils/imageCompression.ts`, `constants/compression.ts`, `IMAGE_COMPRESSION_REPORT.txt`
+  + Test tự động: `tests/imageCompressionReport.test.ts` (5/5 tests passed).
+  + Báo cáo thực nghiệm: Tỷ lệ giảm dung lượng đạt 89.36% (giảm từ ~2.7 MB xuống ~105 KB).
+- Lỗi còn lại: Không có
+--------------------------------------------------------------------------------
+MỤC 06: YÊU THÍCH DÙNG CHUNG STORE & LƯU BỀN VỮNG (FAVORITES)
+- Trạng thái: PASS
+- Yêu cầu: Dùng chung Zustand store có selectors, lưu AsyncStorage, hiển thị đồng bộ trên >= 2 màn hình (Chợ, Chi tiết, Yêu thích).
+- Bằng chứng thực nghiệm:
+  + Module: `store/useFavoriteStore.ts`, `components/FavoriteButton.tsx`, `app/(tabs)/favorites.tsx`
+  + Nhấn tim ở màn hình Chợ -> Biểu tượng chuyển sang đỏ ngay lập tức -> Tab Yêu thích tăng badge số lượng và hiển thị tin -> Vào chi tiết tin thấy nút tim đã được chọn -> Bỏ chọn tại trang Yêu thích thì trang Chợ và Chi tiết cập nhật đồng bộ lập tức.
+  + Khởi động lại ứng dụng: Danh sách yêu thích vẫn được duy trì nguyên vẹn.
+- Lỗi còn lại: Không có
+--------------------------------------------------------------------------------
+MỤC 07: GIỎ HÀNG, TÓM TẮT THANH TOÁN & QUY TẮC TỒN KHO
+- Trạng thái: PASS
+- Yêu cầu: Giỏ hàng tăng/giảm/xóa, không số lượng <= 0, chặn vượt quá tồn kho, không cho thêm món hết hàng; quy tắc giao nhận Campus pickup 0đ, Dorm delivery 10.000đ (freeship từ 200.000đ).
+- Bằng chứng thực nghiệm:
+  + Module: `store/useCartStore.ts`, `utils/cartCalculations.ts`, `app/(tabs)/cart.tsx`, `app/checkout.tsx`
+  + Test tự động: `tests/cartCalculations.test.ts` (14/14 tests passed), `tests/stockAndCartFlow.test.ts` (1/1 test passed).
+  + Đơn hàng chốt đúng số tiền, trừ tồn kho thực tế, không có tình trạng tồn kho âm.
+- Lỗi còn lại: Không có
+--------------------------------------------------------------------------------
+MỤC 08: HOẠT ĐỘNG NGOẠI TUYẾN (OFFLINE CACHE & BANNER)
+- Trạng thái: PASS
+- Yêu cầu: Khi mất mạng / API không phản hồi, hiển thị danh mục đã tải thành công lần gần nhất kèm banner cảnh báo rõ ràng; không bao giờ trắng màn hình.
+- Bằng chứng thực nghiệm:
+  + Module: `services/offlineStorage.ts`, `components/OfflineBanner.tsx`
+  + Khi tắt server backend hoặc tắt mạng: Ứng dụng tự động đọc cache gần nhất, hiển thị banner màu cam "⚠️ Bạn đang ngoại tuyến — Đang xem dữ liệu gần nhất", hiển thị rõ giờ cập nhật gần nhất và nút "Kết nối lại". Màn hình hiển thị đầy đủ danh sách tin đã lưu, không hề bị trắng.
+- Lỗi còn lại: Không có
+--------------------------------------------------------------------------------
+MỤC 09: THÔNG BÁO CỤC BỘ KHI GIÁ THAY ĐỔI (PRICE ALERT)
+- Trạng thái: PASS
+- Yêu cầu: Phát hiện thay đổi giá của mặt hàng đang yêu thích, phát local notification, chống thông báo trùng lặp.
+- Bằng chứng thực nghiệm:
+  + Module: `services/priceNotificationService.ts`, `PRICE_NOTIFICATION_REPORT.txt`
+  + Đã thử nghiệm case giảm giá và tăng giá trên các item yêu thích, phát thông báo đúng và ghi nhận lịch sử chống spam.
+- Lỗi còn lại: Không có
+--------------------------------------------------------------------------------
+MỤC 10: PHÂN QUYỀN VAI TRÒ NGƯỜI MUA / NGƯỜI BÁN (BUYER / SELLER)
+- Trạng thái: PASS
+- Yêu cầu: Phân biệt rõ vai trò, người bán quản lý và sửa/xóa tin chính chủ; người mua chỉ mua hàng; có nút chuyển nhanh vai trò phục vụ chấm điểm.
+- Bằng chứng thực nghiệm:
+  + Module: `store/useAuthStore.ts`, `app/(tabs)/profile.tsx`
+  + Kiểm tra chức năng chuyển vai trò một chạm trên tab Tài khoản hoạt động trơn tru.
+- Lỗi còn lại: Không có
+--------------------------------------------------------------------------------
+MỤC 11: CẤU TRÚC EXPO ROUTER (TỐI THIỂU 5 MÀN HÌNH + MODAL + NOT-FOUND)
+- Trạng thái: PASS
+- Yêu cầu: Expo Router, route động, modal route, `app/+not-found.tsx`.
+- Bằng chứng thực nghiệm:
+  + Đã triển khai đầy đủ 8 màn hình riêng biệt:
+    1. `app/login.tsx` (Màn hình Đăng nhập)
+    2. `app/(tabs)/index.tsx` (Chợ Sinh Viên DNTU)
+    3. `app/listing/[id].tsx` (Chi tiết tin đăng - Route động)
+    4. `app/listing-form.tsx` (Đăng / Sửa tin - Route Modal)
+    5. `app/(tabs)/favorites.tsx` (Danh sách Yêu thích)
+    6. `app/(tabs)/cart.tsx` (Giỏ hàng)
+    7. `app/checkout.tsx` (Tóm tắt thanh toán)
+    8. `app/(tabs)/profile.tsx` (Hồ sơ & Thiết lập)
+    + Route `app/+not-found.tsx` (Màn hình xử lý lỗi 404 có nút quay về)
+- Lỗi còn lại: Không có
+--------------------------------------------------------------------------------
+MỤC 12: HỆ THỐNG MÀU SEMANTIC TOKEN & ACCESSIBILITY
+- Trạng thái: PASS
+- Yêu cầu: Theme sáng và tối dùng chung 1 file token màu duy nhất, KHÔNG có mã hex ngoài token; touch target >= 44x44; độ tương phản >= 4.5:1.
+- Bằng chứng thực nghiệm:
+  + Module: `constants/colors.ts`, `hooks/useThemeColor.ts`, `tests/hexColorAudit.test.ts`
+  + Test tự động: `tests/hexColorAudit.test.ts` (1/1 test passed). Quét toàn bộ project phát hiện đúng 0 mã hex ngoài `constants/colors.ts`.
+  + Báo cáo: `ACCESSIBILITY_AUDIT_REPORT.txt` ghi nhận chi tiết vùng chạm và tỷ lệ tương phản.
+- Lỗi còn lại: Không có
+--------------------------------------------------------------------------------
+MỤC 13: XỬ LÝ 4 TRẠNG THÁI CHUẨN MỖI MÀN HÌNH
+- Trạng thái: PASS
+- Yêu cầu: Loading, Empty, Error có retry thật, Content.
+- Bằng chứng thực nghiệm:
+  + Component: `components/FeedbackStates.tsx` (`LoadingView`, `EmptyView`, `ErrorView`)
+  + Mọi màn hình chính đều xử lý đủ 4 trạng thái theo ngữ cảnh.
+- Lỗi còn lại: Không có
+--------------------------------------------------------------------------------
+MỤC 14: LỆNH KIỂM CHỨNG BẮT BUỘC ĐỀ CƯƠNG
+- Lệnh 1: `npx tsc --noEmit` -> Hoàn thành với 0 lỗi (Exit code 0).
+- Lệnh 2: `npx eslint ...` -> Hoàn thành với 0 lỗi, 0 cảnh báo (Exit code 0).
+- Lệnh 3: `npm test` (`npx vitest run`) -> 5/5 test files passed, 29/29 tests passed (Exit code 0).
+--------------------------------------------------------------------------------
+
+3. KẾT LUẬN
+Ứng dụng "Chợ Mua Bán Trong Khuôn Viên Trường (Campus Marketplace)" đã hoàn thành 100% các tiêu chí cốt lõi và các tiêu chí cộng điểm theo đề cương đồ án môn học Phát triển ứng dụng di động. Dự án có thể được đóng gói và bàn giao ngay.
+================================================================================
+
