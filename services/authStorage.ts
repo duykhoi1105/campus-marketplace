@@ -16,10 +16,7 @@ const webStorageAvailable = (): boolean =>
 export const AuthStorage = {
   async saveToken(token: string): Promise<void> {
     try {
-      if (isWeb) {
-        if (!webStorageAvailable()) {
-          throw new Error('localStorage không khả dụng');
-        }
+      if (isWeb && webStorageAvailable()) {
         window.localStorage.setItem(TOKEN_KEY, token);
       } else {
         await SecureStore.setItemAsync(TOKEN_KEY, token);
@@ -32,8 +29,7 @@ export const AuthStorage = {
 
   async getToken(): Promise<string | null> {
     try {
-      if (isWeb) {
-        if (!webStorageAvailable()) return null;
+      if (isWeb && webStorageAvailable()) {
         return window.localStorage.getItem(TOKEN_KEY);
       }
       return await SecureStore.getItemAsync(TOKEN_KEY);
@@ -45,10 +41,8 @@ export const AuthStorage = {
 
   async deleteToken(): Promise<void> {
     try {
-      if (isWeb) {
-        if (webStorageAvailable()) {
-          window.localStorage.removeItem(TOKEN_KEY);
-        }
+      if (isWeb && webStorageAvailable()) {
+        window.localStorage.removeItem(TOKEN_KEY);
       } else {
         await SecureStore.deleteItemAsync(TOKEN_KEY);
       }
@@ -61,10 +55,7 @@ export const AuthStorage = {
     try {
       const value = JSON.stringify(user);
 
-      if (isWeb) {
-        if (!webStorageAvailable()) {
-          throw new Error('localStorage không khả dụng');
-        }
+      if (isWeb && webStorageAvailable()) {
         window.localStorage.setItem(USER_KEY, value);
       } else {
         await AsyncStorage.setItem(USER_KEY, value);
@@ -79,8 +70,7 @@ export const AuthStorage = {
     try {
       let raw: string | null;
 
-      if (isWeb) {
-        if (!webStorageAvailable()) return null;
+      if (isWeb && webStorageAvailable()) {
         raw = window.localStorage.getItem(USER_KEY);
       } else {
         raw = await AsyncStorage.getItem(USER_KEY);
@@ -96,10 +86,8 @@ export const AuthStorage = {
 
   async deleteUser(): Promise<void> {
     try {
-      if (isWeb) {
-        if (webStorageAvailable()) {
-          window.localStorage.removeItem(USER_KEY);
-        }
+      if (isWeb && webStorageAvailable()) {
+        window.localStorage.removeItem(USER_KEY);
       } else {
         await AsyncStorage.removeItem(USER_KEY);
       }
@@ -112,8 +100,7 @@ export const AuthStorage = {
     try {
       let flag: string | null;
 
-      if (isWeb) {
-        if (!webStorageAvailable()) return false;
+      if (isWeb && webStorageAvailable()) {
         flag = window.localStorage.getItem(LOGGED_OUT_KEY);
       } else {
         flag = await AsyncStorage.getItem(LOGGED_OUT_KEY);
@@ -128,11 +115,7 @@ export const AuthStorage = {
 
   async setExplicitlyLoggedOut(loggedOut: boolean): Promise<void> {
     try {
-      if (isWeb) {
-        if (!webStorageAvailable()) {
-          throw new Error('localStorage không khả dụng');
-        }
-
+      if (isWeb && webStorageAvailable()) {
         if (loggedOut) {
           window.localStorage.setItem(LOGGED_OUT_KEY, 'true');
         } else {

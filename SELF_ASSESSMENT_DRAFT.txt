@@ -1,0 +1,32 @@
+================================================================================
+BÀI TỰ ĐÁNH GIÁ ĐỒ ÁN VÀ QUÁ TRÌNH PHÁT TRIỂN (SELF-ASSESSMENT)
+Đề tài 02: Chợ Mua Bán Trong Khuôn Viên Trường (Campus Marketplace)
+Học phần: Phát triển ứng dụng di động - Lớp: TH7011101 (23DTH1)
+Trường Đại học Công nghệ Đồng Nai - Khoa Công nghệ Thông tin
+Sinh viên thực hiện: Nguyễn Duy Khôi (MSSV: 1923050528)
+Ngày đánh giá: 28/10/2026
+================================================================================
+
+1. NHỮNG ĐIỀU BẢN THÂN SẼ LÀM KHÁC ĐI NẾU BẮT ĐẦU LẠI TỪ ĐẦU
+- Về kiến trúc quản lý trạng thái: Ban đầu, việc quản lý giỏ hàng và danh sách yêu thích có thể dễ bị cám dỗ gom chung vào một store lớn. Tuy nhiên, việc tách bạch thành hai store độc lập (`useCartStore` và `useFavoriteStore`) với các selectors chuyên biệt và cơ chế hydrate riêng đã giúp component không bị render lại không cần thiết (unnecessary re-renders). Nếu làm lại, tôi sẽ thiết kế ngay từ đầu các slice store nhỏ gọn này.
+- Về chiến lược xử lý ảnh: Việc chọn ảnh độ phân giải cao từ camera điện thoại (thường từ 3MB - 8MB) nếu không được nén ngay ở tầng Client sẽ gây nghẽn băng thông nghiêm trọng khi chạy qua mạng di động trường học. Tôi sẽ thiết lập ngay module nén ảnh bằng Expo Image Manipulator trước khi bắt tay vào xây dựng giao diện form đăng tin.
+
+2. CÁC SỰ CỐ / CÂU TRẢ LỜI SAI CỦA TRÍ TUỆ NHÂN TẠO (AI) ĐÃ ĐƯỢC PHÁT HIỆN
+- Sự cố 1 (Lọc tìm kiếm dẫn xuất): Trong quá trình xây dựng bộ lọc và tìm kiếm ở màn hình Chợ (`app/(tabs)/index.tsx`), công cụ AI từng đề xuất tạo thêm một state `const [filteredListings, setFilteredListings] = useState<Listing[]>([])` và dùng một `useEffect` để cập nhật mỗi khi `searchText` hoặc `selectedCategory` thay đổi.
+  + Phát hiện: Vi phạm quy định đề cương cấm lưu state dẫn xuất; gây cascading re-renders.
+  + Khắc phục: Dùng `useMemo` tính toán trực tiếp từ `rawListings`, `searchText` và `selectedCategory` trong render; viết unit test `tests/filterSearch.test.ts`.
+- Sự cố 2 (Mã màu hex hardcode): AI có thói quen viết trực tiếp mã hex như `#ffffff` hoặc `#e2e8f0` trong `StyleSheet.create`.
+  + Phát hiện: Vi phạm quy định Design Tokens (chỉ dùng duy nhất constants/colors.ts).
+  + Khắc phục: Thay thế bằng token semantic qua hook `useAppTheme()` và viết test `tests/hexColorAudit.test.ts`.
+- Sự cố 3 (Lỗi lưu trữ đa nền tảng trong môi trường Test): Khi AI tối ưu hóa kiểm tra `localStorage` cho web, việc ném ngoại lệ khi không có `window.localStorage` đã khiến các test chạy trên môi trường Node.js bị lỗi hàng loạt.
+  + Phát hiện: Chạy `npx vitest run` phát hiện lỗi `localStorage không khả dụng`.
+  + Khắc phục: Bổ sung fallback an toàn sang `SecureStore`/`AsyncStorage` khi không có `window.localStorage`.
+- Sự cố 4 (Lồng thẻ Button trên Expo Web): AI sinh mã nguồn component nút yêu thích và giỏ hàng lồng bên trong thẻ Card có thể nhấn, gây cảnh báo HTML invalid `<button>` inside `<button>`.
+  + Phát hiện: Kiểm tra console khi chạy Expo Web.
+  + Khắc phục: Tách riêng các vùng bấm độc lập (`stopPropagation` / layout độc lập).
+
+3. BÀI HỌC KINH NGHIỆM VÀ LIÊM CHÍNH HỌC THUẬT
+- Về kiểm thử phần mềm (Testing): Viết 7 test suites với 60 bài test tự động (Vitest) giúp bảo đảm an toàn khi refactor, không phát sinh lỗi hồi quy.
+- Về vai trò của AI: AI là trợ lý hỗ trợ tăng tốc, nhưng sinh viên phải làm chủ hoàn toàn mã nguồn, hiểu sâu kiến trúc và kiểm chứng qua các công cụ tự động (`tsc`, `vitest`, `eslint`).
+================================================================================
+

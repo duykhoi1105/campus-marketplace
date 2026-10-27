@@ -49,7 +49,7 @@
 ## 3. CẤU TRÚC THƯ MỤC DỰ ÁN
 
 ```text
-concac/
+1923050528_NguyenDuyKhoi_Campus_Marketplace/
 ├── app/                           # Expo Router - File-based routing (8 màn hình)
 │   ├── (tabs)/                    # Nhóm màn hình có thanh Bottom Tabs
 │   │   ├── _layout.tsx            # Cấu hình thanh TabBar (Chợ, Yêu thích, Giỏ, Profile)
@@ -226,14 +226,5 @@ npm test
 2. Quan sát nút "Thêm vào giỏ" bị vô hiệu hóa kèm chữ "Món đồ đã hết hàng".
 3. Với các sản phẩm còn hàng, thêm vào giỏ và thử tăng số lượng vượt quá số tồn kho -> Ứng dụng lập tức cảnh báo và chặn lại, không cho đặt quá số lượng có sẵn.
 
----
 
-## 8. HỒ SƠ BÀN GIAO ĐỒ ÁN
-
-- **Mã nguồn đầy đủ**: Đã kiểm tra sạch sẽ, không chứa secret/token nhạy cảm.
-- **Tài liệu nộp Canvas**: File nén theo cú pháp `1923050528_Project.zip` (hoặc `MSSV1_MSSV2_MSSV3_Project.zip`).
-- **Tài liệu kiểm toán**: Đầy đủ 6 file báo cáo TXT/MD theo đúng yêu cầu đề cương môn học.
-- **Kịch bản Demo**: File `DEMO_VIDEO_SCRIPT.txt` phân bổ thời lượng 4 phút 15 giây cho video demo.
-
-*Chúc quý thầy cô và các bạn sinh viên có trải nghiệm tuyệt vời với ứng dụng Chợ Sinh Viên DNTU!*
 
